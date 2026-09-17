@@ -1,0 +1,30 @@
+(()=>{
+const box=document.getElementById('deluxeMode');
+if(!box)return;
+let deluxe=false;
+const originals={preparePlay,startRun,stopRun,unlockAudio,celebrate};
+const clsMap={'大吉':'fortune-daikichi','吉':'fortune-kichi','中吉':'fortune-chukichi','小吉':'fortune-shokichi','末吉':'fortune-suekichi','凶':'fortune-kyo','大凶':'fortune-daikyo'};
+const rank={'大吉':6,'吉':5,'中吉':4,'小吉':3,'末吉':2,'凶':1,'大凶':0};
+const messages={
+'大吉':['今日は特別ないい日。小さな笑顔まで宝物になりそう。','うれしいことが重なりそう。いつもの一日をたっぷり楽しんで。','幸運がふわっと近づく日。かわいい瞬間をたくさん残してみよう。','今日は主役の日。思いきり笑って、のびのび過ごそう。','すてきな偶然に出会えそう。家族みんなでにこにこが吉。','今日の一枚が、とっておきの思い出になりそう。','元気もごきげんも満開。新しい発見がありそうな日。','幸せの種があちこちに。いつもの景色にも注目してみて。'],
+'吉':['穏やかないい日。いつものペースがいちばん心地よさそう。','自然体で過ごすほどいい流れに。のんびり楽しもう。','小さないいことを見つけられそう。ゆっくり周りを見てみて。','今日は安心感たっぷり。お気に入りの時間を大切に。','いいリズムの日。笑ったり休んだり、気ままにどうぞ。','じんわり幸せを感じる日。写真を一枚多めに撮ってみよう。','今日は平和な追い風。小さなチャレンジにも向いていそう。','ほっとする出来事がありそう。好きな遊びをたっぷり楽しんで。'],
+'中吉':['いい流れが育っていく日。少し先に楽しみが待っていそう。','じわじわ運気上昇。新しい表情に出会えるかも。','うれしい変化がありそう。小さな発見を見逃さないで。','好奇心がきらり。初めてのものに出会うといい刺激になりそう。','今日のごきげんは上向き。楽しい声かけがさらに吉。','ちょうどいい追い風。無理せず進めばいいことがありそう。','思わぬかわいい瞬間がありそう。カメラの準備を忘れずに。','今日は伸びしろの日。新しい一面がちらっと見えるかも。'],
+'小吉':['小さな幸せが見つかる日。ひとつひとつを楽しんで。','ささやかなラッキーに出会えそう。お気に入りを大切に。','今日はゆっくり育つ幸運の日。急がずのんびりでOK。','ちょっとした笑顔がうれしい日。穏やかな時間を楽しもう。','小さな発見が大きな思い出に。身近なものに注目してみて。','かわいい仕草が見つかりそう。いつもの時間を丁寧に。','小さな一歩がうれしい日。できたことをたくさん喜ぼう。','静かなラッキーが待っていそう。ゆったり観察してみて。'],
+'末吉':['これからじわっと上向き。今日は準備の日と思ってのんびりと。','後半ほどいい感じ。焦らずゆっくり過ごしてみよう。','小さな変化が次の楽しみにつながりそう。','今日は待つことも大切。心地いいタイミングを探してみて。','今はのんびり、あとでにっこり。そんな一日になりそう。','少しずついい方向へ。無理せず自然な流れに任せよう。','今日は観察日和。意外なかわいい癖を見つけられるかも。','明日につながる小さなラッキーがありそう。'],
+'凶':['今日はのんびりモード。無理をしないのがいちばんの開運。','ちょっと休憩が吉。ゆっくりした時間を楽しもう。','予定通りじゃなくても大丈夫。気分に合わせていこう。','少し気まぐれな日かも。そんな日もかわいい思い出。','がんばりすぎない日。ひと息ついたら運気も回復しそう。','今日は寄り道歓迎。予定より心地よさを優先して。','ちょっとしたハプニングも笑い話になりそう。気楽にいこう。','今日は省エネ運転。たっぷり休んで次のごきげんを待とう。'],
+'大凶':['今日は思いきってお休み気分。のんびりするほど大吉に近づきそう。','大凶はレアもの。引けただけでちょっと特別な日。','予定はゆるめでOK。安心できる時間をたっぷりどうぞ。','今日は頑張らない選択が大正解。ゆっくり充電しよう。','ちょっと波乱の予感。でも家族で笑えば全部いい思い出。','今日は安全運転で。いつもの場所がいちばん落ち着きそう。','レアな運勢が出ました。記念にこの表情を残しておこう。','ゆっくり、のんびり、気ままに。そんな日も大切な一日。']
+};
+const last={};
+function pick(f){const a=messages[f]||[''];let i=Math.floor(Math.random()*a.length);if(a.length>1&&i===last[f])i=(i+1+Math.floor(Math.random()*(a.length-1)))%a.length;last[f]=i;return a[i];}
+function clearFx(){Object.values(clsMap).forEach(c=>stage.classList.remove(c));stage.classList.remove('result-reveal');document.querySelectorAll('.fxParticle').forEach(e=>e.remove());}
+function cfg(f){return {'大吉':{s:['✦','✧','★','●'],c:['#ffd700','#fff3a6','#ff7b62','#fff'],n:64},'吉':{s:['✦','●','❀'],c:['#ffb36b','#ffe0a8','#ff9cac','#fff'],n:38},'中吉':{s:['✧','❀','●'],c:['#ffd18c','#ffc0d0','#fff0b5','#fff'],n:42},'小吉':{s:['🍀','✦','●'],c:['#7fcf8a','#d5f0c7','#fff6cf','#fff'],n:34},'末吉':{s:['🌸','·','✧'],c:['#f3a9bd','#ffd9e2','#ead9ff','#fff'],n:32},'凶':{s:['☁','✧','·'],c:['#aeb9c7','#dbe3ec','#9eabc0','#fff'],n:26},'大凶':{s:['✦','☾','·'],c:['#9387b7','#c3b8e4','#70658f','#fff'],n:28}}[f]||{s:['✦'],c:['#fff'],n:24};}
+function particles(f){const x=cfg(f);for(let i=0;i<x.n;i++){const e=document.createElement('span');e.className='fxParticle';e.textContent=x.s[Math.floor(Math.random()*x.s.length)];e.style.left=(4+Math.random()*92)+'vw';e.style.top=(-10-Math.random()*18)+'vh';e.style.color=x.c[Math.floor(Math.random()*x.c.length)];e.style.fontSize=(10+Math.random()*16)+'px';e.style.animationDuration=(1.8+Math.random()*2.1)+'s';e.style.animationDelay=(Math.random()*.45)+'s';e.style.setProperty('--drift',(-70+Math.random()*140)+'px');document.body.appendChild(e);setTimeout(()=>e.remove(),4700);}}
+function impact(f){if(!audioCtx||audioCtx.state!=='running')return;const r=rank[f]??3;if(r>=4){tone(1047,.20,.02,.06,'sine');tone(1319,.28,.12,.055,'sine');}else if(r<=1){tone(196,.22,.02,.05,'triangle');tone(262,.32,.18,.045,'sine');}else{tone(784,.20,.02,.05,'sine');tone(988,.25,.15,.05,'sine');}}
+function deluxeStart(){if(!audioCtx||audioCtx.state!=='running')return;[[392,.12,0],[523,.13,.08],[659,.15,.16],[784,.20,.26],[1047,.26,.39]].forEach(([f,d,w],i)=>tone(f,d,w,.07,i%2?'sine':'triangle'));}
+function reveal(f){const c=clsMap[f];if(c)stage.classList.add(c);stage.classList.add('result-reveal');particles(f);if(f==='大吉'){bigOverlay.classList.add('deluxe');originals.celebrate();setTimeout(()=>bigOverlay.classList.remove('deluxe'),2700);impact(f);}else{playSound(f);impact(f);}if(navigator.vibrate){const r=rank[f]??3;navigator.vibrate(r>=5?[70,45,100]:r<=1?[45,70,45]:[50,35,70]);}}
+unlockAudio=function(){primed=true;ensureAudio();if(box.checked)deluxeStart();else playSound('start');};
+preparePlay=function(x){deluxe=!!box.checked;playSection.classList.toggle('deluxe-mode',deluxe);clearFx();originals.preparePlay(x);};
+startRun=function(withSound=true){clearFx();originals.startRun(false);if(withSound){if(deluxe)deluxeStart();else playSound('start');}};
+celebrate=function(){bigOverlay.classList.remove('deluxe');originals.celebrate();};
+stopRun=function(){running=false;clearInterval(timer);timer=null;stage.classList.remove('pulse');if(activeCreation.mode==='omikuji'){const f=activeCreation.fortunes[currentIndex]||'吉';fortuneBadge.style.display='block';fortuneBadge.textContent=(FORTUNE_ICONS[f]||'🎴')+' '+f;fortuneBadge.style.color=FORTUNE_COLORS[f]||'#700';resultCard.style.display='block';resultText.textContent=f;resultText.style.color=FORTUNE_COLORS[f]||'#700';message.textContent=pick(f);rouletteBadge.style.display='none';if(deluxe)reveal(f);else if(f==='大吉')celebrate();else playSound(f);}else{rouletteBadge.style.display='block';rouletteBadge.textContent='この表情！';if(deluxe){stage.classList.add('result-reveal');particles('吉');impact('吉');}playSound('吉');}tapHint.textContent='もう一度タップすると再開します';};
+})();
