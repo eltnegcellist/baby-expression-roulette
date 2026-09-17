@@ -17,25 +17,26 @@
 <header>
   <div>
     <h1>Baby Expression Roulette</h1>
-    <p class="lead">動画から表情の違うコマを選び、ルーレットやおみくじで遊べます。</p>
+    <p class="lead">動画を選ぶだけで、表情の違うコマを自動で選んでルーレットにします。</p>
   </div>
-  <button id="installHelp" class="install" onclick="event.stopImmediatePropagation(); alert('ブラウザの共有またはメニューから「ホーム画面に追加」や「アプリをインストール」を選ぶと、アプリのように使えます。利用できる項目名は端末やブラウザによって異なります。')">ホーム画面に追加</button>
+  <button id="installHelp" class="install">ホーム画面に追加</button>
 </header>
 
 <section class="card">
   <div class="step">CREATE</div>
-  <h2>新しいルーレットを作る</h2>
+  <h2>動画からルーレットを作る</h2>
   <div class="filebox">
     <input id="fileInput" type="file" accept="video/*">
     <div class="row">
-      <label>抽出枚数</label>
+      <label>表情の数</label>
       <select id="frameCount">
-        <option>8</option><option>10</option><option>12</option>
-        <option selected>14</option><option>16</option><option>18</option><option>20</option>
+        <option value="auto" selected>おまかせ</option>
+        <option value="8">8枚</option><option value="10">10枚</option><option value="12">12枚</option>
+        <option value="14">14枚</option><option value="16">16枚</option><option value="18">18枚</option><option value="20">20枚</option>
       </select>
-      <button id="extractBtn" class="primary" disabled>表情を選ぶ</button>
+      <button id="extractBtn" class="secondary" disabled>選び直す</button>
     </div>
-    <div class="note">処理はブラウザ内だけで行います。元動画はサーバーへ送信しません。</div>
+    <div class="note">動画を選ぶと自動で処理を始めます。「おまかせ」は動画の長さと候補の違いから枚数を決めます。処理はブラウザ内だけで行い、元動画はサーバーへ送信しません。</div>
   </div>
   <div id="progressWrap">
     <div class="progress"><div id="progressBar"></div></div>
@@ -45,19 +46,19 @@
 
 <section id="previewSection" class="card" style="display:none">
   <div class="step">PREVIEW</div>
-  <h2>選ばれたコマ</h2>
+  <h2>選ばれた表情</h2>
   <div id="grid" class="grid"></div>
 
   <div class="modeGrid">
-    <button class="mode active" data-mode="omikuji"><b>🎴 おみくじ</b><small>運勢・効果音・大吉演出つき</small></button>
+    <button class="mode active" data-mode="omikuji"><b>🎴 おみくじ</b><small>大吉を必ず1つ入れて、運勢・効果音・演出つき</small></button>
     <button class="mode" data-mode="roulette"><b>🎞️ 表情ルーレット</b><small>止まった瞬間の表情を楽しむ</small></button>
   </div>
 
   <div class="row" style="margin-top:13px">
     <input id="titleInput" value="赤ちゃんルーレット" style="flex:1;min-width:170px;padding:11px 12px;border:1px solid #d9cec8;border-radius:12px">
     <button id="playBtn" class="primary">この内容で遊ぶ</button>
-    <button id="saveBtn" class="secondary">このルーレットを保存</button>
   </div>
+  <div class="note" style="margin-top:9px">遊ぶと、このルーレットはこのブラウザに自動保存されます。</div>
 </section>
 
 <section class="card">
