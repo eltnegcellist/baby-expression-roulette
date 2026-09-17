@@ -9,8 +9,8 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon.svg">
 <title>赤ちゃん表情おみくじ</title>
-<link rel="stylesheet" href="./style.css?v=12">
-<link rel="stylesheet" href="./deluxe.css?v=12">
+<link rel="stylesheet" href="./style.css?v=121">
+<link rel="stylesheet" href="./deluxe.css?v=121">
 <style>
 body:not(.show-score-details) .scoreChip,
 body:not(.show-score-details) .scoreDetails,
@@ -23,7 +23,7 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <header class="hero">
   <div class="heroMark" aria-hidden="true">🎴</div>
   <div class="heroText">
-    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge">v12</span></div>
+    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge">v12.1</span></div>
     <h1>赤ちゃん表情おみくじ</h1>
     <p class="heroCatch">かわいい一瞬を、おみくじに。</p>
     <p class="lead">動画を選ぶだけで、印象的な表情を自動で切り出して赤ちゃんおみくじを作ります。</p>
@@ -67,8 +67,8 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <video id="video" playsinline muted preload="metadata" style="display:none"></video><canvas id="captureCanvas" style="display:none"></canvas><canvas id="smallCanvas" width="28" height="28" style="display:none"></canvas>
 </div>
 <div id="bigOverlay"><div id="bigText">大吉！</div></div>
-<script src="./app.js?v=12" defer></script>
-<script src="./deluxe.js?v=12" defer></script>
+<script src="./app.js?v=121" defer></script>
+<script src="./deluxe.js?v=121" defer></script>
 <script>
 (()=>{
   const scoreBox=document.getElementById('showScores');
@@ -80,8 +80,14 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
     document.body.classList.toggle('show-fortune-map',!!fortuneBox?.checked);
   };
   const rename=()=>{
-    document.querySelectorAll('.scoreChip').forEach(el=>{el.textContent=el.textContent.replace(/^魅力度/,'表情度');});
-    if(status)status.textContent=status.textContent.replace(/魅力度/g,'表情度');
+    document.querySelectorAll('.scoreChip').forEach(el=>{
+      const next=el.textContent.replace(/^魅力度/,'表情度');
+      if(next!==el.textContent) el.textContent=next;
+    });
+    if(status){
+      const next=status.textContent.replace(/魅力度/g,'表情度');
+      if(next!==status.textContent) status.textContent=next;
+    }
   };
   scoreBox?.addEventListener('change',sync);fortuneBox?.addEventListener('change',sync);
   if(grid)new MutationObserver(rename).observe(grid,{childList:true,subtree:true});
