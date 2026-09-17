@@ -1,4 +1,4 @@
-const DEFAULT_FORTUNES=["吉", "小吉", "中吉", "吉", "末吉", "小吉", "大吉", "吉", "小吉", "中吉", "吉", "末吉", "凶", "大凶"];
+const BASE_FORTUNES=["吉","小吉","中吉","吉","末吉","小吉","吉","小吉","中吉","吉","末吉","凶","大凶"];
 const fortuneIcons={"大吉":"🌟","中吉":"✨","小吉":"🍀","吉":"🎈","末吉":"🌸","凶":"☁️","大凶":"⚡"};
 const fortuneColors={"大吉":"#b40000","中吉":"#b85d00","小吉":"#28752c","吉":"#754600","末吉":"#8b5f00","凶":"#56616c","大凶":"#4b2b7f"};
 const fortuneMessages={
@@ -15,7 +15,7 @@ const $=id=>document.getElementById(id);
 const fileInput=$("fileInput"), extractBtn=$("extractBtn"), frameCountEl=$("frameCount");
 const progressWrap=$("progressWrap"), progressBar=$("progressBar"), progressText=$("progressText");
 const previewSection=$("previewSection"), grid=$("grid"), titleInput=$("titleInput");
-const playBtn=$("playBtn"), saveBtn=$("saveBtn"), library=$("library"), playSection=$("playSection");
+const playBtn=$("playBtn"), library=$("library"), playSection=$("playSection");
 const stage=$("stage"), playImage=$("playImage"), fortuneBadge=$("fortuneBadge"), resultCard=$("resultCard");
 const resultText=$("resultText"), message=$("message"), rouletteBadge=$("rouletteBadge"), tapHint=$("tapHint");
 const video=$("video"), captureCanvas=$("captureCanvas"), smallCanvas=$("smallCanvas");
@@ -24,13 +24,20 @@ const startOverlay=$("startOverlay"), startTitle=$("startTitle"), primeBtn=$("pr
 
 let objectUrl=null, candidates=[], selectedFrames=[], selectedMode="omikuji";
 let activeCreation=null, running=false, timer=null, currentIndex=0, primed=false;
+let currentDraftId=null, currentFortunes=[];
 
 document.querySelectorAll(".mode").forEach(btn=>btn.addEventListener("click",()=>{
   document.querySelectorAll(".mode").forEach(x=>x.classList.remove("active"));
   btn.classList.add("active"); selectedMode=btn.dataset.mode;
 }));
 
-fileInput.addEventListener("change",()=>{extractBtn.disabled=!fileInput.files?.length;previewSection.style.display="none"});
+fileInput.addEventListener("change",()=>{
+  const hasFile=!!fileInput.files?.length;
+  extractBtn.disabled=!hasFile;
+  previewSection.style.display="none";
+  currentDraftId=null;currentFortunes=[];
+  if(hasFile) extract();
+});
 
 function once(target,event,timeout=6000){
   return new Promise((resolve,reject)=>{
@@ -89,12 +96,29 @@ function chooseDiverse(list,n){
   }
   return chosen.sort((a,b)=>a.time-b.time);
 }
+function autoTarget(duration,distinctCount,totalCount){
+  let byDuration=14;
+  if(duration<4)byDuration=6;
+  else if(duration<8)byDuration=8;
+  else if(duration<15)byDuration=10;
+  else if(duration<30)byDuration=12;
+  const available=Math.max(1,distinctCount||totalCount||byDuration);
+  return Math.max(6,Math.min(14,byDuration,available));
+}
+function makeFortunes(n){
+  if(n<=0)return [];
+  const out=Array.from({length:n},(_,i)=>BASE_FORTUNES[i%BASE_FORTUNES.length]);
+  const daikichiIndex=Math.floor(Math.random()*n);
+  out[daikichiIndex]="大吉";
+  return out;
+}
 async function extract(){
   const file=fileInput.files?.[0]; if(!file)return;
   extractBtn.disabled=true; progressWrap.style.display="block"; previewSection.style.display="none";
   try{
     await loadVideo(file); setupCanvas();
-    const target=Number(frameCountEl.value), sampleCount=Math.min(72,Math.max(target*4,Math.ceil(video.duration*2.5)));
+    const auto=frameCountEl.value==="auto", requested=auto?14:Number(frameCountEl.value);
+    const sampleCount=Math.min(72,Math.max(requested*4,Math.ceil(video.duration*2.5)));
     const start=Math.min(.15,video.duration*.02),end=Math.max(start,video.duration-.08),times=[];
     for(let i=0;i<sampleCount;i++)times.push(start+(end-start)*(sampleCount===1?0:i/(sampleCount-1)));
     candidates=[];
@@ -109,11 +133,15 @@ async function extract(){
       const prev=filtered[filtered.length-1];
       if(prev&&dist(c.desc,prev.desc)<4.2){if(c.quality>prev.quality)filtered[filtered.length-1]=c}else filtered.push(c);
     }
+    const target=auto?autoTarget(video.duration,filtered.length,sorted.length):requested;
     selectedFrames=chooseDiverse(filtered.length>=target?filtered:sorted,target);
-    progressBar.style.width="100%";progressText.textContent=`${selectedFrames.length}枚を選びました`;
+    currentDraftId=crypto.randomUUID?crypto.randomUUID():"r"+Date.now();
+    currentFortunes=makeFortunes(selectedFrames.length);
+    progressBar.style.width="100%";
+    progressText.textContent=`${auto?"おまかせで":""}${selectedFrames.length}枚を選びました`;
     renderGrid(); previewSection.style.display="block"; previewSection.scrollIntoView({behavior:"smooth"});
   }catch(e){alert("動画を処理できませんでした: "+e.message)}
-  finally{extractBtn.disabled=false}
+  finally{extractBtn.disabled=!fileInput.files?.length}
 }
 function renderGrid(){
   grid.innerHTML="";
@@ -123,11 +151,12 @@ function renderGrid(){
   });
 }
 extractBtn.addEventListener("click",extract);
+frameCountEl.addEventListener("change",()=>{if(fileInput.files?.length)extract()});
 
 function currentCreation(){
-  const fortunes=selectedFrames.map((_,i)=>DEFAULT_FORTUNES[i%DEFAULT_FORTUNES.length]);
-  return {id:crypto.randomUUID?crypto.randomUUID():"r"+Date.now(),title:titleInput.value.trim()||"赤ちゃんルーレット",
-    createdAt:Date.now(),mode:selectedMode,frames:selectedFrames.map(f=>f.dataUrl),fortunes};
+  if(currentFortunes.length!==selectedFrames.length)currentFortunes=makeFortunes(selectedFrames.length);
+  return {id:currentDraftId||(crypto.randomUUID?crypto.randomUUID():"r"+Date.now()),title:titleInput.value.trim()||"赤ちゃんルーレット",
+    createdAt:Date.now(),mode:selectedMode,frames:selectedFrames.map(f=>f.dataUrl),fortunes:[...currentFortunes]};
 }
 
 const DBNAME="babyExpressionRouletteDB",STORE="creations";
@@ -136,7 +165,8 @@ async function dbPut(x){const db=await openDB();return new Promise((res,rej)=>{c
 async function dbAll(){const db=await openDB();return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).getAll();r.onsuccess=()=>res(r.result.sort((a,b)=>b.createdAt-a.createdAt));r.onerror=()=>rej(r.error)})}
 async function dbDelete(id){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).delete(id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
 async function refreshLibrary(){
-  const all=await dbAll();library.innerHTML="";
+  let all=[];try{all=await dbAll()}catch(e){library.innerHTML='<div class="note">このブラウザでは保存領域を利用できません。</div>';return}
+  library.innerHTML="";
   if(!all.length){library.innerHTML='<div class="note">まだ保存されていません。</div>';return}
   all.forEach(x=>{
     const el=document.createElement("div");el.className="saved";
@@ -147,8 +177,12 @@ async function refreshLibrary(){
     library.appendChild(el);
   });
 }
-saveBtn.addEventListener("click",async()=>{if(!selectedFrames.length)return;const x=currentCreation();await dbPut(x);await refreshLibrary();alert("この端末に保存しました")});
-playBtn.addEventListener("click",()=>{if(selectedFrames.length)preparePlay(currentCreation())});
+playBtn.addEventListener("click",async()=>{
+  if(!selectedFrames.length)return;
+  const x=currentCreation();
+  try{await dbPut(x);await refreshLibrary()}catch(e){}
+  preparePlay(x);
+});
 
 function preparePlay(x){
   activeCreation=x;primed=false;running=false;clearInterval(timer);
@@ -231,7 +265,7 @@ primeBtn.addEventListener("click",e=>{
 });
 stage.addEventListener("pointerdown",e=>{e.preventDefault();if(!primed)return;if(running)stopRun();else startRun()},{passive:false});
 $("backBtn").addEventListener("click",()=>{clearInterval(timer);running=false;playSection.style.display="none";window.scrollTo({top:0,behavior:"smooth"})});
-$("installHelp").addEventListener("click",()=>alert("iPhoneではSafariでこのサイトを開き、共有ボタン →「ホーム画面に追加」を使うとアプリ感覚で使えます。"));
+$("installHelp").addEventListener("click",()=>alert("ブラウザの共有またはメニューから「ホーム画面に追加」や「アプリをインストール」を選ぶと、アプリのように使えます。利用できる項目名は端末やブラウザによって異なります。"));
 
 refreshLibrary();
 if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("./sw.js").catch(()=>{});
