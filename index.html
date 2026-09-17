@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon.svg">
-<title>Baby Expression Roulette</title>
-<link rel="stylesheet" href="./style.css?v=9">
+<title>赤ちゃん表情おみくじ</title>
+<link rel="stylesheet" href="./style.css?v=10">
 <style>
 body:not(.show-score-details) .scoreChip,
 body:not(.show-score-details) .scoreDetails,
@@ -18,10 +18,13 @@ body:not(.show-score-details) #analysisStatus{display:none!important}
 </head>
 <body>
 <div class="wrap">
-<header>
-  <div>
-    <h1>Baby Expression Roulette</h1>
-    <p class="lead">動画を選ぶだけで、まずは赤ちゃんおみくじを自動で作ります。通常ルーレットにしたい時だけ下のオプションを使います。</p>
+<header class="hero">
+  <div class="heroMark" aria-hidden="true">🎴</div>
+  <div class="heroText">
+    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge">v10</span></div>
+    <h1>赤ちゃん表情おみくじ</h1>
+    <p class="heroCatch">かわいい一瞬を、おみくじに。</p>
+    <p class="lead">動画を選ぶだけで、印象的な表情を自動で切り出して赤ちゃんおみくじを作ります。</p>
   </div>
 </header>
 
@@ -116,7 +119,7 @@ body:not(.show-score-details) #analysisStatus{display:none!important}
 
 <div id="bigOverlay"><div id="bigText">大吉！</div></div>
 
-<script src="./app.js?v=9" defer></script>
+<script src="./app.js?v=10" defer></script>
 <script>
 (()=>{
   const box=document.getElementById('showScores');
