@@ -1,6 +1,6 @@
 {
-  "name": "Baby Expression Roulette",
-  "short_name": "Baby Roulette",
+  "name": "赤ちゃん表情おみくじ",
+  "short_name": "表情おみくじ",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#fff7ef",
