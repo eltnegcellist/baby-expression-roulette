@@ -17,48 +17,59 @@
 <header>
   <div>
     <h1>Baby Expression Roulette</h1>
-    <p class="lead">動画を選ぶだけで、表情の違うコマを自動で選んでルーレットにします。</p>
+    <p class="lead">動画を選ぶだけで、まずは赤ちゃんおみくじを自動で作ります。通常ルーレットにしたい時だけ下のオプションを使います。</p>
   </div>
   <button id="installHelp" class="install">ホーム画面に追加</button>
 </header>
 
 <section class="card">
   <div class="step">CREATE</div>
-  <h2>動画からルーレットを作る</h2>
+  <h2>新しいおみくじを作る</h2>
   <div class="filebox">
     <input id="fileInput" type="file" accept="video/*">
-    <div class="row">
-      <label>表情の数</label>
-      <select id="frameCount">
-        <option value="auto" selected>おまかせ</option>
-        <option value="8">8枚</option><option value="10">10枚</option><option value="12">12枚</option>
-        <option value="14">14枚</option><option value="16">16枚</option><option value="18">18枚</option><option value="20">20枚</option>
-      </select>
-      <button id="extractBtn" class="secondary" disabled>選び直す</button>
-    </div>
-    <div class="note">動画を選ぶと自動で処理を始めます。「おまかせ」は動画の長さと候補の違いから枚数を決めます。処理はブラウザ内だけで行い、元動画はサーバーへ送信しません。</div>
+    <div class="note">動画を選ぶと自動で表情コマを抽出します。処理はブラウザ内だけで行い、元動画は外部へ送信しません。</div>
   </div>
   <div id="progressWrap">
     <div class="progress"><div id="progressBar"></div></div>
     <div id="progressText">準備中...</div>
   </div>
+  <details class="opt">
+    <summary>詳細オプション</summary>
+    <div class="row" style="margin-bottom:10px">
+      <label for="frameCount">抽出枚数</label>
+      <select id="frameCount">
+        <option value="auto" selected>おまかせ（12〜28枚）</option>
+        <option value="8">8枚</option>
+        <option value="10">10枚</option>
+        <option value="12">12枚</option>
+        <option value="14">14枚</option>
+        <option value="16">16枚</option>
+        <option value="18">18枚</option>
+        <option value="20">20枚</option>
+        <option value="24">24枚</option>
+        <option value="28">28枚</option>
+        <option value="32">32枚</option>
+      </select>
+    </div>
+    <label class="toggle">
+      <span>
+        <b style="display:block;margin-bottom:3px">通常ルーレットにする</b>
+        <span class="note">ONにすると、運勢なしの表情ルーレットとして作ります。通常はOFFのままでOKです。</span>
+      </span>
+      <input id="plainMode" type="checkbox">
+    </label>
+  </details>
 </section>
 
 <section id="previewSection" class="card" style="display:none">
   <div class="step">PREVIEW</div>
-  <h2>選ばれた表情</h2>
+  <h2 id="previewTitle">自動で作成したおみくじ</h2>
   <div id="grid" class="grid"></div>
-
-  <div class="modeGrid">
-    <button class="mode active" data-mode="omikuji"><b>🎴 おみくじ</b><small>大吉を必ず1つ入れて、運勢・効果音・演出つき</small></button>
-    <button class="mode" data-mode="roulette"><b>🎞️ 表情ルーレット</b><small>止まった瞬間の表情を楽しむ</small></button>
-  </div>
-
   <div class="row" style="margin-top:13px">
-    <input id="titleInput" value="赤ちゃんルーレット" style="flex:1;min-width:170px;padding:11px 12px;border:1px solid #d9cec8;border-radius:12px">
     <button id="playBtn" class="primary">この内容で遊ぶ</button>
+    <button id="reextractBtn" class="secondary">もう一度抽出する</button>
   </div>
-  <div class="note" style="margin-top:9px">遊ぶと、このルーレットはこのブラウザに自動保存されます。</div>
+  <div class="note" id="previewNote" style="margin-top:8px">保存名は自動で付けます。必要なら保存後に変更できます。</div>
 </section>
 
 <section class="card">
@@ -90,7 +101,6 @@
 <video id="video" playsinline muted preload="metadata" style="display:none"></video>
 <canvas id="captureCanvas" style="display:none"></canvas>
 <canvas id="smallCanvas" width="28" height="28" style="display:none"></canvas>
-
 </div>
 
 <div id="startOverlay">
