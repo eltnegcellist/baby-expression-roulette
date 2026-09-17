@@ -9,7 +9,12 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon.svg">
 <title>Baby Expression Roulette</title>
-<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./style.css?v=9">
+<style>
+body:not(.show-score-details) .scoreChip,
+body:not(.show-score-details) .scoreDetails,
+body:not(.show-score-details) #analysisStatus{display:none!important}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -111,6 +116,15 @@
 
 <div id="bigOverlay"><div id="bigText">大吉！</div></div>
 
-<script src="./app.js" defer></script>
+<script src="./app.js?v=9" defer></script>
+<script>
+(()=>{
+  const box=document.getElementById('showScores');
+  if(!box)return;
+  const sync=()=>document.body.classList.toggle('show-score-details',box.checked);
+  box.addEventListener('change',sync);
+  sync();
+})();
+</script>
 </body>
 </html>
