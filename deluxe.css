@@ -22,3 +22,33 @@
 @keyframes slowSpin{to{transform:rotate(360deg)}}
 @keyframes resultIn{0%{opacity:0;transform:translateX(-50%) translateY(45px) scale(.72) rotate(-2deg)}65%{opacity:1;transform:translateX(-50%) translateY(-5px) scale(1.035) rotate(.5deg)}100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1) rotate(0)}}
 @media(max-width:520px){.deluxe-mode #resultCard{width:min(88%,340px);bottom:14px}.deluxe-mode #resultText{font-size:48px}}
+/* v12.2: result effects yield to the baby photo after the reveal */
+.deluxe-mode #playImage{transition:filter .5s ease,transform .5s ease}
+.deluxe-mode #resultCard{transition:width .5s ease,bottom .5s ease,padding .5s ease,border-radius .5s ease,background .5s ease,box-shadow .5s ease,opacity .5s ease}
+.deluxe-mode #fortuneBadge{transition:font-size .5s ease,padding .5s ease,opacity .5s ease,box-shadow .5s ease}
+.deluxe-mode #stage.photo-focus:before,
+.deluxe-mode #stage.photo-focus:after{opacity:0!important}
+.deluxe-mode #stage.photo-focus #playImage{filter:none;transform:none}
+.deluxe-mode #stage.photo-focus #resultCard{
+  width:min(78%,310px);
+  bottom:10px;
+  padding:10px 13px 11px;
+  border-radius:16px;
+  background:rgba(255,253,248,.86);
+  box-shadow:0 8px 24px #0004,0 0 0 1px #ffffff88 inset;
+  backdrop-filter:blur(3px)
+}
+.deluxe-mode #stage.photo-focus #resultHead{font-size:9px;letter-spacing:.12em}
+.deluxe-mode #stage.photo-focus #resultText{font-size:26px;margin:2px 0 4px;text-shadow:none}
+.deluxe-mode #stage.photo-focus #message{font-size:11px;line-height:1.45;font-weight:700}
+.deluxe-mode #stage.photo-focus #fortuneBadge{
+  font-size:16px;
+  padding:6px 10px;
+  box-shadow:0 5px 16px #0004;
+  backdrop-filter:blur(3px)
+}
+@media(max-width:520px){
+  .deluxe-mode #stage.photo-focus #resultCard{width:min(82%,290px);bottom:8px;padding:9px 11px 10px}
+  .deluxe-mode #stage.photo-focus #resultText{font-size:24px}
+  .deluxe-mode #stage.photo-focus #message{font-size:10.5px}
+}
