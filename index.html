@@ -19,7 +19,7 @@
     <h1>Baby Expression Roulette</h1>
     <p class="lead">動画から表情の違うコマを選び、ルーレットやおみくじで遊べます。</p>
   </div>
-  <button id="installHelp" class="install">iPhoneで使う</button>
+  <button id="installHelp" class="install" onclick="event.stopImmediatePropagation(); alert('ブラウザの共有またはメニューから「ホーム画面に追加」や「アプリをインストール」を選ぶと、アプリのように使えます。利用できる項目名は端末やブラウザによって異なります。')">ホーム画面に追加</button>
 </header>
 
 <section class="card">
@@ -56,7 +56,7 @@
   <div class="row" style="margin-top:13px">
     <input id="titleInput" value="赤ちゃんルーレット" style="flex:1;min-width:170px;padding:11px 12px;border:1px solid #d9cec8;border-radius:12px">
     <button id="playBtn" class="primary">この内容で遊ぶ</button>
-    <button id="saveBtn" class="secondary">端末に保存</button>
+    <button id="saveBtn" class="secondary">このルーレットを保存</button>
   </div>
 </section>
 
