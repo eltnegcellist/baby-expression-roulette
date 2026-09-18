@@ -48,3 +48,94 @@
   #labRareBadge{top:66px;font-size:12px;max-width:90%;white-space:normal;text-align:center}
   .labLuckyRow{font-size:9px}.labLuckyRow b{font-size:10px}
 }
+
+/* LAB 4: move the result panel below the photo after the initial reveal */
+#labResultDock{display:none;margin-top:10px}
+#labResultDock.show{display:block}
+#labResultDock #resultCard.labDocked{
+  display:block!important;
+  position:relative!important;
+  left:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  top:auto!important;
+  width:100%!important;
+  max-width:none!important;
+  transform:none!important;
+  margin:0!important;
+  padding:14px 16px 15px!important;
+  border-radius:18px!important;
+  background:rgba(255,253,248,.97)!important;
+  box-shadow:0 7px 22px #0002,0 0 0 1px #fff inset!important;
+  backdrop-filter:none!important;
+  animation:labDockIn .42s ease both!important
+}
+#labResultDock #resultCard.labDocked #resultHead{font-size:9px!important}
+#labResultDock #resultCard.labDocked #resultText{font-size:30px!important;margin:2px 0 5px!important;text-shadow:none!important}
+#labResultDock #resultCard.labDocked #message{font-size:11px!important;line-height:1.45!important}
+#labResultDock #labFortuneExtra{margin-top:8px;padding-top:8px}
+@keyframes labDockIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+/* LAB 4: unmistakable full-screen miracle / reversal sequence */
+#labMiracleOverlay{
+  position:fixed;inset:0;z-index:30000;display:none;pointer-events:none;
+  align-items:center;justify-content:center;overflow:hidden;text-align:center
+}
+#labMiracleOverlay.show{display:flex}
+.labMiracleHalo{position:absolute;inset:-35%;opacity:0}
+.labMiracleCenter{position:relative;z-index:3;width:min(92vw,620px);padding:28px 18px;filter:drop-shadow(0 8px 20px #0007)}
+.labMiracleKicker{font-size:clamp(14px,4vw,22px);font-weight:950;letter-spacing:.08em}
+.labMiracleTitle{margin-top:8px;font-size:clamp(48px,15vw,96px);line-height:.95;font-weight:1000;letter-spacing:-.04em}
+.labMiracleSub{margin-top:14px;font-size:clamp(14px,4.6vw,26px);font-weight:1000;letter-spacing:.08em}
+.labMiracleSparkles{position:absolute;inset:0;z-index:2}
+.labMiracleSparkles span{
+  position:absolute;left:var(--x);top:var(--y);opacity:0;
+  animation:labSparkBurst 1.8s var(--d) cubic-bezier(.17,.67,.25,1) both;
+  transform:translate(-50%,-50%) rotate(var(--r));text-shadow:0 2px 12px #0005
+}
+#labMiracleOverlay.miracle-mode{
+  color:#7b3800;
+  background:radial-gradient(circle at 50% 44%,#fff 0 9%,#fff7a8 20%,#ffd331dd 38%,#ff7a6ccc 60%,#8c4affcc 80%,#210a35ee 100%);
+  animation:labMiracleScreen 3s ease both
+}
+#labMiracleOverlay.miracle-mode .labMiracleHalo{
+  opacity:1;background:repeating-conic-gradient(from 0deg,#fff9 0 5deg,transparent 5deg 14deg);
+  animation:labHaloSpin 2.4s linear infinite
+}
+#labMiracleOverlay.reversal-wait-mode{
+  color:#fff;background:rgba(15,11,20,.90);animation:labDarkIn .45s ease both
+}
+#labMiracleOverlay.reversal-wait-mode .labMiracleTitle{font-size:clamp(44px,13vw,78px)}
+#labMiracleOverlay.reversal-mode{
+  color:#5d277d;
+  background:radial-gradient(circle at center,#fff 0 8%,#fff4a7 19%,#9ff6ffcc 35%,#f4a8ffcc 53%,#86ffbacc 70%,#8b6dffdd 100%);
+  animation:labReversalScreen 3.2s ease both
+}
+#labMiracleOverlay.reversal-mode .labMiracleHalo{
+  opacity:1;background:repeating-conic-gradient(from 0deg,#fff8 0 4deg,transparent 4deg 11deg);
+  animation:labHaloSpin 1.5s linear infinite reverse
+}
+@keyframes labSparkBurst{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(0)}
+  18%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.9) rotate(var(--r))}
+}
+@keyframes labHaloSpin{to{transform:rotate(360deg)}}
+@keyframes labMiracleScreen{
+  0%{opacity:0;filter:brightness(3)}
+  10%{opacity:1;filter:brightness(1.35)}
+  78%{opacity:1}
+  100%{opacity:0}
+}
+@keyframes labDarkIn{from{opacity:0}to{opacity:1}}
+@keyframes labReversalScreen{
+  0%{opacity:0;filter:brightness(4) saturate(2)}
+  8%{opacity:1}
+  18%{filter:brightness(1.15) saturate(1.3)}
+  82%{opacity:1}
+  100%{opacity:0}
+}
+@media(max-width:520px){
+  #labResultDock #resultCard.labDocked{padding:12px 13px 13px!important}
+  .labMiracleCenter{padding:20px 12px}
+}
