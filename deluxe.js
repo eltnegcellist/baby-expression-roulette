@@ -3,6 +3,8 @@ const box=document.getElementById('deluxeMode');
 if(!box)return;
 let deluxe=false;
 let photoFocusTimer=null;
+let drumRollTimer=null;
+let drumStep=0;
 const originals={preparePlay,startRun,stopRun,unlockAudio,celebrate};
 const clsMap={'大吉':'fortune-daikichi','吉':'fortune-kichi','中吉':'fortune-chukichi','小吉':'fortune-shokichi','末吉':'fortune-suekichi','凶':'fortune-kyo','大凶':'fortune-daikyo'};
 const rank={'大吉':6,'吉':5,'中吉':4,'小吉':3,'末吉':2,'凶':1,'大凶':0};
@@ -17,7 +19,25 @@ const messages={
 };
 const last={};
 function pick(f){const a=messages[f]||[''];let i=Math.floor(Math.random()*a.length);if(a.length>1&&i===last[f])i=(i+1+Math.floor(Math.random()*(a.length-1)))%a.length;last[f]=i;return a[i];}
+function stopDrumRoll(){
+  if(drumRollTimer){clearInterval(drumRollTimer);drumRollTimer=null;}
+  drumStep=0;
+}
+function startDrumRoll(){
+  stopDrumRoll();
+  if(!deluxe||!primed||!ensureAudio())return;
+  const hit=()=>{
+    const accents=[.026,.018,.022,.019,.03,.019];
+    const freqs=[118,142,126,150,120,158];
+    const k=drumStep++%accents.length;
+    tone(freqs[k],.055,0,accents[k],k%2?'triangle':'square');
+    if(k===4)tone(230,.035,.018,.012,'triangle');
+  };
+  hit();
+  drumRollTimer=setInterval(hit,92);
+}
 function clearFx(){
+stopDrumRoll();
 clearTimeout(photoFocusTimer);photoFocusTimer=null;
 Object.values(clsMap).forEach(c=>stage.classList.remove(c));
 stage.classList.remove('result-reveal','photo-focus');
@@ -46,9 +66,18 @@ photoFocusTimer=setTimeout(focusPhoto,1500);
 }
 unlockAudio=function(){primed=true;ensureAudio();if(box.checked)deluxeStart();else playSound('start');};
 preparePlay=function(x){deluxe=!!box.checked;playSection.classList.toggle('deluxe-mode',deluxe);clearFx();originals.preparePlay(x);};
-startRun=function(withSound=true){clearFx();originals.startRun(false);if(withSound){if(deluxe)deluxeStart();else playSound('start');}};
+startRun=function(withSound=true){
+  clearFx();
+  originals.startRun(false);
+  if(deluxe){
+    if(withSound)deluxeStart();
+    setTimeout(()=>{if(running&&deluxe)startDrumRoll();},withSound?360:120);
+  }else if(withSound){
+    playSound('start');
+  }
+};
 celebrate=function(){bigOverlay.classList.remove('deluxe');originals.celebrate();};
-stopRun=function(){running=false;clearInterval(timer);timer=null;stage.classList.remove('pulse');if(activeCreation.mode==='omikuji'){const f=activeCreation.fortunes[currentIndex]||'吉';fortuneBadge.style.display='block';fortuneBadge.textContent=(FORTUNE_ICONS[f]||'🎴')+' '+f;fortuneBadge.style.color=FORTUNE_COLORS[f]||'#700';resultCard.style.display='block';resultText.textContent=f;resultText.style.color=FORTUNE_COLORS[f]||'#700';message.textContent=pick(f);rouletteBadge.style.display='none';if(deluxe)reveal(f);else if(f==='大吉')celebrate();else playSound(f);}else{rouletteBadge.style.display='block';rouletteBadge.textContent='この表情！';if(deluxe){stage.classList.add('result-reveal');stage.classList.remove('photo-focus');particles('吉');impact('吉');clearTimeout(photoFocusTimer);photoFocusTimer=setTimeout(focusPhoto,1500);}playSound('吉');}tapHint.textContent='もう一度タップすると再開します';};
+stopRun=function(){stopDrumRoll();running=false;clearInterval(timer);timer=null;stage.classList.remove('pulse');if(activeCreation.mode==='omikuji'){const f=activeCreation.fortunes[currentIndex]||'吉';fortuneBadge.style.display='block';fortuneBadge.textContent=(FORTUNE_ICONS[f]||'🎴')+' '+f;fortuneBadge.style.color=FORTUNE_COLORS[f]||'#700';resultCard.style.display='block';resultText.textContent=f;resultText.style.color=FORTUNE_COLORS[f]||'#700';message.textContent=pick(f);rouletteBadge.style.display='none';if(deluxe)reveal(f);else if(f==='大吉')celebrate();else playSound(f);}else{rouletteBadge.style.display='block';rouletteBadge.textContent='この表情！';if(deluxe){stage.classList.add('result-reveal');stage.classList.remove('photo-focus');particles('吉');impact('吉');clearTimeout(photoFocusTimer);photoFocusTimer=setTimeout(focusPhoto,1500);}playSound('吉');}tapHint.textContent='もう一度タップすると再開します';};
 
 const photoViewer=document.createElement('div');
 photoViewer.id='photoViewer';
