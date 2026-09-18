@@ -1,5 +1,5 @@
-const CACHE='baby-roulette-pages-v13-1';
-const ASSETS=['./','./index.html','./style.css?v=131','./deluxe.css?v=131','./app.js?v=131','./deluxe.js?v=131','./manifest.webmanifest','./icon.svg'];
+const CACHE='baby-roulette-pages-v14';
+const ASSETS=['./','./index.html','./style.css?v=14','./deluxe.css?v=14','./app.js?v=14','./deluxe.js?v=14','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});return r;}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))));});
