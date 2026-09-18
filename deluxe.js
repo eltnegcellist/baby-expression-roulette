@@ -49,4 +49,60 @@ preparePlay=function(x){deluxe=!!box.checked;playSection.classList.toggle('delux
 startRun=function(withSound=true){clearFx();originals.startRun(false);if(withSound){if(deluxe)deluxeStart();else playSound('start');}};
 celebrate=function(){bigOverlay.classList.remove('deluxe');originals.celebrate();};
 stopRun=function(){running=false;clearInterval(timer);timer=null;stage.classList.remove('pulse');if(activeCreation.mode==='omikuji'){const f=activeCreation.fortunes[currentIndex]||'吉';fortuneBadge.style.display='block';fortuneBadge.textContent=(FORTUNE_ICONS[f]||'🎴')+' '+f;fortuneBadge.style.color=FORTUNE_COLORS[f]||'#700';resultCard.style.display='block';resultText.textContent=f;resultText.style.color=FORTUNE_COLORS[f]||'#700';message.textContent=pick(f);rouletteBadge.style.display='none';if(deluxe)reveal(f);else if(f==='大吉')celebrate();else playSound(f);}else{rouletteBadge.style.display='block';rouletteBadge.textContent='この表情！';if(deluxe){stage.classList.add('result-reveal');stage.classList.remove('photo-focus');particles('吉');impact('吉');clearTimeout(photoFocusTimer);photoFocusTimer=setTimeout(focusPhoto,1500);}playSound('吉');}tapHint.textContent='もう一度タップすると再開します';};
+
+const photoViewer=document.createElement('div');
+photoViewer.id='photoViewer';
+photoViewer.setAttribute('aria-hidden','true');
+photoViewer.innerHTML='<img id="photoViewerImage" alt="赤ちゃんの写真"><button id="photoViewerClose" type="button" aria-label="写真表示を閉じる">×</button><div id="photoViewerHint">タップで戻る</div>';
+document.body.appendChild(photoViewer);
+const photoViewerImage=photoViewer.querySelector('#photoViewerImage');
+const photoViewerClose=photoViewer.querySelector('#photoViewerClose');
+let photoViewerNative=false;
+
+async function openPhotoViewer(){
+  if(running||!activeCreation||activeCreation.mode!=='omikuji')return;
+  clearTimeout(photoFocusTimer);photoFocusTimer=null;
+  photoViewerImage.src=playImage.currentSrc||playImage.src;
+  photoViewer.classList.add('show');
+  photoViewer.setAttribute('aria-hidden','false');
+  try{
+    if(photoViewer.requestFullscreen){
+      await photoViewer.requestFullscreen({navigationUI:'hide'});
+      photoViewerNative=true;
+    }
+  }catch(e){photoViewerNative=false;}
+}
+function closePhotoViewer(fromFullscreen=false){
+  photoViewer.classList.remove('show');
+  photoViewer.setAttribute('aria-hidden','true');
+  if(!fromFullscreen&&document.fullscreenElement===photoViewer&&document.exitFullscreen){
+    document.exitFullscreen().catch(()=>{});
+  }
+  photoViewerNative=false;
+}
+fortuneBadge.setAttribute('role','button');
+fortuneBadge.setAttribute('tabindex','0');
+fortuneBadge.setAttribute('aria-label','運勢。タップすると写真を全画面で表示');
+fortuneBadge.addEventListener('pointerdown',e=>{
+  if(running||!activeCreation||activeCreation.mode!=='omikuji')return;
+  e.preventDefault();e.stopPropagation();
+  openPhotoViewer();
+},{passive:false});
+fortuneBadge.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&!running){
+    e.preventDefault();e.stopPropagation();openPhotoViewer();
+  }
+});
+photoViewer.addEventListener('pointerdown',e=>{
+  e.preventDefault();e.stopPropagation();closePhotoViewer();
+},{passive:false});
+photoViewerClose.addEventListener('pointerdown',e=>{
+  e.preventDefault();e.stopPropagation();closePhotoViewer();
+},{passive:false});
+document.addEventListener('fullscreenchange',()=>{
+  if(photoViewerNative&&document.fullscreenElement!==photoViewer&&photoViewer.classList.contains('show')){
+    closePhotoViewer(true);
+  }
+});
+
 })();
