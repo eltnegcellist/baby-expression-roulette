@@ -53,22 +53,38 @@
   .deluxe-mode #stage.photo-focus #message{font-size:10.5px}
 }
 
-/* v12.3: fortune badge opens a photo-only fullscreen viewer */
-#fortuneBadge[role="button"]{
-  cursor:pointer;
-  touch-action:manipulation;
-  display:inline-flex;
+/* v15: dedicated photo-view button keeps the fortune badge clean */
+#photoAction{
+  position:absolute;
+  right:12px;
+  top:14px;
+  z-index:6;
   align-items:center;
-  justify-content:center;
-  gap:.4em;
-  white-space:nowrap
-}
-#fortuneBadge[role="button"]:after{
-  content:"🖼️";
-  font-size:1.12em;
+  gap:7px;
+  padding:8px 11px;
+  border:1px solid rgba(255,255,255,.8);
+  border-radius:999px;
+  background:rgba(255,255,255,.90);
+  color:#4b382e;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);
+  backdrop-filter:blur(6px);
+  font-size:12px;
+  font-weight:900;
   line-height:1;
-  opacity:.9;
-  flex:0 0 auto
+  white-space:nowrap;
+  touch-action:manipulation
+}
+#photoAction .photoActionIcon{
+  font-size:19px;
+  line-height:1
+}
+.deluxe-mode #photoAction{
+  background:rgba(255,253,248,.92);
+  box-shadow:0 7px 24px rgba(0,0,0,.30),0 0 16px var(--fxGlow,#ffd76a44)
+}
+@media(max-width:520px){
+  #photoAction{right:9px;top:10px;padding:7px 9px;font-size:11px;gap:5px}
+  #photoAction .photoActionIcon{font-size:18px}
 }
 #photoViewer{
   position:fixed;
