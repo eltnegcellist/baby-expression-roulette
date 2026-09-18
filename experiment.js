@@ -43,6 +43,21 @@ let rareTimer=null;
 let rareSecondTimer=null;
 let history=[];
 let gifUrl=null;
+let dockTimer=null;
+
+const playShellEl=stageEl.closest('.playShell');
+const resultDock=document.createElement('div');
+resultDock.id='labResultDock';
+playShellEl.insertAdjacentElement('afterend',resultDock);
+
+const miracleOverlay=document.createElement('div');
+miracleOverlay.id='labMiracleOverlay';
+miracleOverlay.innerHTML='<div class="labMiracleHalo"></div><div class="labMiracleCenter"><div class="labMiracleKicker"></div><div class="labMiracleTitle"></div><div class="labMiracleSub"></div></div><div class="labMiracleSparkles"></div>';
+document.body.appendChild(miracleOverlay);
+const miracleKicker=miracleOverlay.querySelector('.labMiracleKicker');
+const miracleTitle=miracleOverlay.querySelector('.labMiracleTitle');
+const miracleSub=miracleOverlay.querySelector('.labMiracleSub');
+const miracleSparkles=miracleOverlay.querySelector('.labMiracleSparkles');
 
 const extra=document.createElement('div');
 extra.id='labFortuneExtra';
@@ -77,34 +92,83 @@ function playSpecialSound(kind){
     }
   }catch(e){}
 }
+function fillMiracleSparkles(){
+  miracleSparkles.innerHTML='';
+  const chars=['✦','★','✧','●','🌈','✨'];
+  for(let i=0;i<54;i++){
+    const s=document.createElement('span');
+    s.textContent=chars[Math.floor(Math.random()*chars.length)];
+    s.style.setProperty('--x',(Math.random()*100)+'vw');
+    s.style.setProperty('--y',(Math.random()*100)+'vh');
+    s.style.setProperty('--d',(Math.random()*.65)+'s');
+    s.style.setProperty('--r',(-160+Math.random()*320)+'deg');
+    s.style.fontSize=(12+Math.random()*24)+'px';
+    miracleSparkles.appendChild(s);
+  }
+}
+function hideMiracleOverlay(){
+  miracleOverlay.className='';
+  miracleKicker.textContent='';miracleTitle.textContent='';miracleSub.textContent='';
+  miracleSparkles.innerHTML='';
+}
+function undockResult(){
+  clearTimeout(dockTimer);dockTimer=null;
+  if(resultCardEl.parentElement!==stageEl){
+    const roulette=document.getElementById('rouletteBadge');
+    stageEl.insertBefore(resultCardEl,roulette||null);
+  }
+  resultCardEl.classList.remove('labDocked');
+  resultDock.classList.remove('show');
+}
+function dockResult(){
+  if(running||!currentLab)return;
+  resultDock.appendChild(resultCardEl);
+  resultCardEl.classList.add('labDocked');
+  resultDock.classList.add('show');
+}
 function clearSpecial(){
   clearTimeout(rareTimer);clearTimeout(rareSecondTimer);
   rareTimer=rareSecondTimer=null;rare.className='';rare.textContent='';
   stageEl.classList.remove('lab-miracle','lab-reversal');
+  hideMiracleOverlay();
 }
 function clearLab(){
-  clearSpecial();extra.style.display='none';specialLine.style.display='none';currentLab=null;
+  clearSpecial();undockResult();extra.style.display='none';specialLine.style.display='none';currentLab=null;
 }
 function showMiracle(kind){
+  fillMiracleSparkles();
   if(kind==='miracle'){
-    rare.textContent='✨ 奇跡の一枚 ✨';rare.className='show miracle';
     stageEl.classList.add('lab-miracle');
     specialLine.textContent='✨ '+randomOf(MIRACLE_MESSAGES);
     specialLine.className='miracle';specialLine.style.display='block';
+    miracleKicker.textContent='大吉の、その先へ';
+    miracleTitle.textContent='奇跡の一枚！';
+    miracleSub.textContent='✨ MIRACLE PHOTO ✨';
+    miracleOverlay.className='show miracle-mode';
     playSpecialSound('miracle');
-    rareSecondTimer=setTimeout(()=>rare.classList.remove('show'),2200);
+    if(navigator.vibrate)navigator.vibrate([90,45,120,55,180,60,260]);
+    rareSecondTimer=setTimeout(hideMiracleOverlay,3000);
     return;
   }
-  rare.textContent='……あれ？';rare.className='show reversal-wait';
+  miracleKicker.textContent='大凶……';
+  miracleTitle.textContent='……あれ？';
+  miracleSub.textContent='何かがおかしい';
+  miracleOverlay.className='show reversal-wait-mode';
+  if(navigator.vibrate)navigator.vibrate([70,80,70]);
   rareSecondTimer=setTimeout(()=>{
-    if(running)return;
-    rare.textContent='🌈 大逆転！奇跡の一枚 🌈';rare.className='show reversal';
+    if(running){hideMiracleOverlay();return;}
     stageEl.classList.add('lab-reversal');
     specialLine.textContent='🌈 '+randomOf(REVERSAL_MESSAGES);
     specialLine.className='reversal';specialLine.style.display='block';
+    miracleKicker.textContent='運勢、ひっくり返りました';
+    miracleTitle.textContent='大逆転！';
+    miracleSub.textContent='🌈 奇跡の一枚 🌈';
+    miracleOverlay.className='show reversal-mode';
+    fillMiracleSparkles();
     playSpecialSound('reversal');
-    setTimeout(()=>rare.classList.remove('show'),2300);
-  },700);
+    if(navigator.vibrate)navigator.vibrate([120,40,120,40,220,60,320]);
+    setTimeout(hideMiracleOverlay,3200);
+  },850);
 }
 
 function renderHistory(){
@@ -150,7 +214,9 @@ function showLabResult(){
   saveBtn.textContent='♡ 今日の一枚に保存';saveBtn.disabled=false;
   extra.style.display='block';
   addHistory(currentLab);
-  if(special)rareTimer=setTimeout(()=>{if(!running)showMiracle(special);},special==='reversal'?1500:1250);
+  clearTimeout(dockTimer);
+  dockTimer=setTimeout(dockResult,1550);
+  if(special)rareTimer=setTimeout(()=>{if(!running)showMiracle(special);},special==='reversal'?1450:1150);
 }
 
 const previousStop=stopRun;
@@ -223,30 +289,20 @@ function gifPalette(){
   return p;
 }
 function lzwEncode(pixels,minCodeSize=8){
-  const clear=1<<minCodeSize,end=clear+1;
-  let next=end+1,codeSize=minCodeSize+1,dict=new Map();
-  const out=[];let bitBuf=0,bitCount=0;
+  // Reliability-first GIF stream: keep codes at 9 bits by resetting
+  // before the decoder's dictionary reaches the 10-bit boundary.
+  const clear=1<<minCodeSize,end=clear+1,codeSize=minCodeSize+1;
+  const out=[];let bitBuf=0,bitCount=0,sinceClear=0;
   const emit=code=>{
     bitBuf|=code<<bitCount;bitCount+=codeSize;
     while(bitCount>=8){out.push(bitBuf&255);bitBuf>>=8;bitCount-=8;}
   };
-  const reset=()=>{dict=new Map();next=end+1;codeSize=minCodeSize+1;};
   emit(clear);
-  let prefix=pixels[0]??0;
-  for(let i=1;i<pixels.length;i++){
-    const k=pixels[i],key=(prefix<<8)|k;
-    const found=dict.get(key);
-    if(found!==undefined){prefix=found;continue;}
-    emit(prefix);
-    if(next<4096){
-      dict.set(key,next++);
-      if(next===(1<<codeSize)&&codeSize<12)codeSize++;
-    }else{
-      emit(clear);reset();
-    }
-    prefix=k;
+  for(let i=0;i<pixels.length;i++){
+    emit(pixels[i]);sinceClear++;
+    if(sinceClear>=200){emit(clear);sinceClear=0;}
   }
-  emit(prefix);emit(end);
+  emit(end);
   if(bitCount>0)out.push(bitBuf&255);
   return out;
 }
@@ -259,7 +315,7 @@ function appendSubBlocks(writer,data){
 }
 async function makeGif(entries,onProgress){
   const first=await loadImage(entries[0].image);
-  const maxW=320,maxH=420;
+  const maxW=360,maxH=480;
   const scale=Math.min(1,maxW/first.naturalWidth,maxH/first.naturalHeight);
   const w=Math.max(2,Math.round(first.naturalWidth*scale));
   const h=Math.max(2,Math.round(first.naturalHeight*scale));
@@ -278,7 +334,7 @@ async function makeGif(entries,onProgress){
     const d=ctx.getImageData(0,0,w,h).data;
     const idx=new Uint8Array(w*h);
     for(let i=0,p=0;i<d.length;i+=4,p++)idx[p]=((d[i]>>5)<<5)|((d[i+1]>>5)<<2)|(d[i+2]>>6);
-    const delay=35;
+    const delay=32;
     bytes.push(0x21,0xF9,0x04,0x00,...u16(delay),0x00,0x00);
     bytes.push(0x2C,0,0,0,0,...u16(w),...u16(h),0x00,0x08);
     appendSubBlocks(bytes,lzwEncode(idx,8));
