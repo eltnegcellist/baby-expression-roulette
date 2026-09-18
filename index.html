@@ -9,8 +9,8 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon.svg">
 <title>赤ちゃん表情おみくじ</title>
-<link rel="stylesheet" href="./style.css?v=13">
-<link rel="stylesheet" href="./deluxe.css?v=13">
+<link rel="stylesheet" href="./style.css?v=131">
+<link rel="stylesheet" href="./deluxe.css?v=131">
 <style>
 body:not(.show-score-details) .scoreChip,
 body:not(.show-score-details) .scoreDetails,
@@ -23,7 +23,7 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <header class="hero">
   <div class="heroMark" aria-hidden="true">🎴</div>
   <div class="heroText">
-    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge">v13</span></div>
+    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge">v13.1</span></div>
     <h1>赤ちゃん表情おみくじ</h1>
     <p class="heroCatch">かわいい一瞬を、おみくじに。</p>
     <p class="lead">動画を選ぶだけで、印象的な表情を自動で切り出して赤ちゃんおみくじを作ります。</p>
@@ -47,7 +47,7 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
       </select>
     </div>
     <label class="toggle"><span><b style="display:block;margin-bottom:3px">通常ルーレットにする</b><span class="note">ONにすると、運勢なしの表情ルーレットとして作ります。通常はOFFのままでOKです。</span></span><input id="plainMode" type="checkbox"></label>
-    <label class="toggle" style="margin-top:10px"><span><b style="display:block;margin-bottom:3px">豪華演出モード</b><span class="note">ONにすると、結果札・光・粒子・効果音などの演出を運勢ごとに豪華にします。通常はOFFです。</span></span><input id="deluxeMode" type="checkbox"></label>
+    <label class="toggle" style="margin-top:10px"><span><b style="display:block;margin-bottom:3px">豪華演出モード</b><span class="note">結果札・光・粒子・効果音などの演出を運勢ごとに豪華にします。デフォルトでONです。</span></span><input id="deluxeMode" type="checkbox" checked></label>
     <label class="toggle" style="margin-top:10px"><span><b style="display:block;margin-bottom:3px">表情度を表示する</b><span class="note">表情度は赤ちゃんの良し悪しではなく、この動画の中で写真の表情や見た目がどれだけ特徴的かを示す相対値です。ONにすると「くっきり・珍しさ・変化」の内訳も表示します。</span></span><input id="showScores" type="checkbox"></label>
     <label class="toggle" style="margin-top:10px"><span><b style="display:block;margin-bottom:3px">運勢の割り当てを表示する</b><span class="note">ONにすると、プレビュー写真ごとの「大吉・吉・凶」などを先に確認できます。通常は隠したまま遊べます。</span></span><input id="showFortunes" type="checkbox"></label>
   </details>
@@ -67,8 +67,8 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <video id="video" playsinline muted preload="metadata" style="display:none"></video><canvas id="captureCanvas" style="display:none"></canvas><canvas id="smallCanvas" width="28" height="28" style="display:none"></canvas>
 </div>
 <div id="bigOverlay"><div id="bigText">大吉！</div></div>
-<script src="./app.js?v=13" defer></script>
-<script src="./deluxe.js?v=13" defer></script>
+<script src="./app.js?v=131" defer></script>
+<script src="./deluxe.js?v=131" defer></script>
 <script>
 (()=>{
   const scoreBox=document.getElementById('showScores');
