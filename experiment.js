@@ -2,6 +2,10 @@
 const stageEl=document.getElementById('stage');
 const resultCardEl=document.getElementById('resultCard');
 const resultTextEl=document.getElementById('resultText');
+const messageEl=document.getElementById('message');
+const fortuneBadgeEl=document.getElementById('fortuneBadge');
+const rouletteBadgeEl=document.getElementById('rouletteBadge');
+const tapHintEl=document.getElementById('tapHint');
 const playImageEl=document.getElementById('playImage');
 const collectionEl=document.getElementById('labCollection');
 const extremeMode=document.getElementById('labExtremeMode');
@@ -74,6 +78,9 @@ stageEl.appendChild(rare);
 function randomOf(arr){return arr[Math.floor(Math.random()*arr.length)];}
 function pickLucky(){
   return {color:randomOf(LUCKY_COLORS),point:randomOf(LUCKY_POINTS)};
+}
+function renderLucky(lucky){
+  renderLucky(lucky);
 }
 function specialFor(fortune){
   if(fortune==='大吉'&&Math.random()<MIRACLE_DAIKICHI_RATE)return 'miracle';
@@ -177,11 +184,15 @@ function renderHistory(){
   makeGifBtn.disabled=history.length<2;
   clearHistoryBtn.disabled=!history.length;
   history.forEach((x,i)=>{
-    const card=document.createElement('div');card.className='labHistoryItem';
-    card.innerHTML='<img alt=""><div><strong></strong><span></span></div>';
+    const card=document.createElement('button');
+    card.type='button';
+    card.className='labHistoryItem';
+    card.setAttribute('aria-label',(i+1)+'回目 '+x.fortune+' の結果を見る');
+    card.innerHTML='<img alt=""><div><strong></strong><span></span><em>結果を見る</em></div>';
     card.querySelector('img').src=x.image;
     card.querySelector('strong').textContent=(i+1)+'回目 ・ '+x.fortune;
     card.querySelector('span').textContent='元動画 '+x.time.toFixed(1)+'秒';
+    card.addEventListener('click',()=>showHistoryEntry(x));
     historyEl.appendChild(card);
   });
 }
@@ -190,12 +201,45 @@ function addHistory(item){
   history.push({
     image:playImageEl.currentSrc||playImageEl.src,
     time:Number.isFinite(time)?time:currentIndex,
+    index:currentIndex,
     fortune:item.fortune,
+    lucky:item.lucky,
     special:item.special,
+    message:messageEl?.textContent||'',
     drawnAt:Date.now()
   });
   if(history.length>40)history.shift();
   renderHistory();
+}
+function showHistoryEntry(x){
+  clearInterval(timer);timer=null;running=false;stageEl.classList.remove('pulse');
+  clearSpecial();undockResult();
+  const idx=Number.isInteger(x.index)?x.index:
+    activeCreation?.times?.reduce((best,t,i)=>Math.abs(t-x.time)<Math.abs((activeCreation.times[best]??Infinity)-x.time)?i:best,0);
+  if(Number.isInteger(idx))currentIndex=idx;
+  playImageEl.src=x.image;
+  fortuneBadgeEl.style.display='block';
+  fortuneBadgeEl.textContent=(FORTUNE_ICONS[x.fortune]||'🎴')+' '+x.fortune;
+  fortuneBadgeEl.style.color=FORTUNE_COLORS[x.fortune]||'#700';
+  resultCardEl.style.display='block';
+  resultTextEl.textContent=x.fortune;
+  resultTextEl.style.color=FORTUNE_COLORS[x.fortune]||'#700';
+  messageEl.textContent=x.message||'このときの結果です。';
+  currentLab={fortune:x.fortune,lucky:x.lucky||pickLucky(),special:x.special,fromHistory:true};
+  renderLucky(currentLab.lucky);
+  specialLine.style.display='none';specialLine.className='';
+  if(x.special){
+    specialLine.textContent=x.special==='reversal'?'🌈 大逆転！奇跡の一枚':'✨ 奇跡の一枚';
+    specialLine.className=x.special==='reversal'?'reversal':'miracle';
+    specialLine.style.display='block';
+  }
+  saveBtn.textContent='♡ 今日の一枚に保存';saveBtn.disabled=false;
+  extra.style.display='block';
+  rouletteBadgeEl.style.display='none';
+  const photoAction=document.getElementById('photoAction');if(photoAction)photoAction.style.display='inline-flex';
+  tapHintEl.textContent='履歴を表示中。写真をタップするとルーレットを再開します';
+  dockResult();
+  document.getElementById('playSection')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function clearGifResult(){
   if(gifUrl){URL.revokeObjectURL(gifUrl);gifUrl=null;}
@@ -218,6 +262,31 @@ function showLabResult(){
   dockTimer=setTimeout(dockResult,1550);
   if(special)rareTimer=setTimeout(()=>{if(!running)showMiracle(special);},special==='reversal'?1450:1150);
 }
+
+// LAB 5: distinguish a real tap from a scroll gesture.
+let stageGesture=null;
+stageEl.addEventListener('pointerdown',e=>{
+  if(e.target.closest('button,a,input,label'))return;
+  stageGesture={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now(),moved:false};
+  // Suppress the original app.js pointerdown handler, but keep browser scrolling enabled.
+  e.stopImmediatePropagation();
+},true);
+window.addEventListener('pointermove',e=>{
+  if(!stageGesture||e.pointerId!==stageGesture.id)return;
+  if(Math.hypot(e.clientX-stageGesture.x,e.clientY-stageGesture.y)>12)stageGesture.moved=true;
+},true);
+window.addEventListener('pointerup',e=>{
+  if(!stageGesture||e.pointerId!==stageGesture.id)return;
+  const g=stageGesture;stageGesture=null;
+  const moved=g.moved||Math.hypot(e.clientX-g.x,e.clientY-g.y)>12;
+  if(moved||performance.now()-g.t>700)return;
+  e.preventDefault();
+  if(!primed)unlockAudio();
+  if(running)stopRun();else startRun();
+},true);
+window.addEventListener('pointercancel',e=>{
+  if(stageGesture&&e.pointerId===stageGesture.id)stageGesture=null;
+},true);
 
 const previousStop=stopRun;
 stopRun=function(){
@@ -280,17 +349,70 @@ async function loadImage(src){
   });
 }
 function u16(v){return [v&255,(v>>8)&255];}
-function gifPalette(){
-  const p=[];
-  for(let i=0;i<256;i++){
-    const r=Math.round(((i>>5)&7)*255/7),g=Math.round(((i>>2)&7)*255/7),b=Math.round((i&3)*255/3);
-    p.push(r,g,b);
+function buildAdaptivePalette(data,maxColors=256){
+  const hist=new Map();
+  // Sample every fourth pixel. 5-bit histogram suppresses noise while preserving photo colors.
+  for(let i=0;i<data.length;i+=16){
+    const r=data[i],g=data[i+1],b=data[i+2];
+    const key=((r>>3)<<10)|((g>>3)<<5)|(b>>3);
+    const e=hist.get(key);
+    if(e){e.n++;e.r+=r;e.g+=g;e.b+=b;}
+    else hist.set(key,{n:1,r,g,b});
   }
-  return p;
+  let points=Array.from(hist.values(),e=>({n:e.n,r:e.r/e.n,g:e.g/e.n,b:e.b/e.n}));
+  if(!points.length)points=[{n:1,r:0,g:0,b:0}];
+  const boxes=[points];
+  const stats=box=>{
+    let r0=255,r1=0,g0=255,g1=0,b0=255,b1=0,n=0;
+    for(const p of box){r0=Math.min(r0,p.r);r1=Math.max(r1,p.r);g0=Math.min(g0,p.g);g1=Math.max(g1,p.g);b0=Math.min(b0,p.b);b1=Math.max(b1,p.b);n+=p.n;}
+    return {ranges:[r1-r0,g1-g0,b1-b0],n};
+  };
+  while(boxes.length<maxColors){
+    let best=-1,bestScore=-1,bestStats=null;
+    for(let i=0;i<boxes.length;i++){
+      if(boxes[i].length<2)continue;
+      const s=stats(boxes[i]),score=Math.max(...s.ranges)*Math.sqrt(s.n);
+      if(score>bestScore){best=i;bestScore=score;bestStats=s;}
+    }
+    if(best<0)break;
+    const box=boxes.splice(best,1)[0];
+    const channel=bestStats.ranges.indexOf(Math.max(...bestStats.ranges));
+    const key=['r','g','b'][channel];
+    box.sort((a,b)=>a[key]-b[key]);
+    const total=box.reduce((s,p)=>s+p.n,0);
+    let acc=0,cut=1;
+    for(let i=0;i<box.length-1;i++){acc+=box[i].n;if(acc>=total/2){cut=i+1;break;}}
+    boxes.push(box.slice(0,cut),box.slice(cut));
+  }
+  const palette=boxes.map(box=>{
+    let n=0,r=0,g=0,b=0;
+    for(const p of box){n+=p.n;r+=p.r*p.n;g+=p.g*p.n;b+=p.b*p.n;}
+    return [Math.round(r/n),Math.round(g/n),Math.round(b/n)];
+  });
+  while(palette.length<256)palette.push(palette[palette.length-1]||[0,0,0]);
+  return palette.slice(0,256);
+}
+function mapToPalette(data,palette){
+  const out=new Uint8Array(data.length/4);
+  const lut=new Int16Array(32768);lut.fill(-1);
+  for(let i=0,p=0;i<data.length;i+=4,p++){
+    const r=data[i],g=data[i+1],b=data[i+2];
+    const key=((r>>3)<<10)|((g>>3)<<5)|(b>>3);
+    let pi=lut[key];
+    if(pi<0){
+      let best=0,bd=Infinity;
+      for(let k=0;k<palette.length;k++){
+        const q=palette[k],dr=r-q[0],dg=g-q[1],db=b-q[2];
+        const d=dr*dr*2+dg*dg*3+db*db;
+        if(d<bd){bd=d;best=k;if(d===0)break;}
+      }
+      pi=best;lut[key]=pi;
+    }
+    out[p]=pi;
+  }
+  return out;
 }
 function lzwEncode(pixels,minCodeSize=8){
-  // Reliability-first GIF stream: keep codes at 9 bits by resetting
-  // before the decoder's dictionary reaches the 10-bit boundary.
   const clear=1<<minCodeSize,end=clear+1,codeSize=minCodeSize+1;
   const out=[];let bitBuf=0,bitCount=0,sinceClear=0;
   const emit=code=>{
@@ -323,7 +445,8 @@ async function makeGif(entries,onProgress){
   const ctx=canvas.getContext('2d',{willReadFrequently:true});
   const bytes=[];
   'GIF89a'.split('').forEach(ch=>bytes.push(ch.charCodeAt(0)));
-  bytes.push(...u16(w),...u16(h),0xF7,0,0,...gifPalette());
+  // No global color table. Every frame gets a palette matched to that photo.
+  bytes.push(...u16(w),...u16(h),0x70,0,0);
   bytes.push(0x21,0xFF,0x0B,...Array.from('NETSCAPE2.0').map(c=>c.charCodeAt(0)),0x03,0x01,0x00,0x00,0x00);
   for(let fi=0;fi<entries.length;fi++){
     const img=fi===0?first:await loadImage(entries[fi].image);
@@ -332,11 +455,14 @@ async function makeGif(entries,onProgress){
     const dw=Math.round(img.naturalWidth*s),dh=Math.round(img.naturalHeight*s);
     ctx.drawImage(img,Math.round((w-dw)/2),Math.round((h-dh)/2),dw,dh);
     const d=ctx.getImageData(0,0,w,h).data;
-    const idx=new Uint8Array(w*h);
-    for(let i=0,p=0;i<d.length;i+=4,p++)idx[p]=((d[i]>>5)<<5)|((d[i+1]>>5)<<2)|(d[i+2]>>6);
+    const palette=buildAdaptivePalette(d,256);
+    const idx=mapToPalette(d,palette);
     const delay=32;
     bytes.push(0x21,0xF9,0x04,0x00,...u16(delay),0x00,0x00);
-    bytes.push(0x2C,0,0,0,0,...u16(w),...u16(h),0x00,0x08);
+    // Local color table flag + 256-color table.
+    bytes.push(0x2C,0,0,0,0,...u16(w),...u16(h),0x87);
+    for(const q of palette)bytes.push(q[0],q[1],q[2]);
+    bytes.push(0x08);
     appendSubBlocks(bytes,lzwEncode(idx,8));
     onProgress?.(fi+1,entries.length);
     await new Promise(r=>setTimeout(r,0));
