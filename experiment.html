@@ -11,7 +11,7 @@
 <title>赤ちゃん表情おみくじ LAB</title>
 <link rel="stylesheet" href="./style.css?v=15">
 <link rel="stylesheet" href="./deluxe.css?v=15">
-<link rel="stylesheet" href="./experiment.css?v=2">
+<link rel="stylesheet" href="./experiment.css?v=3">
 <style>
 body:not(.show-score-details) .scoreChip,
 body:not(.show-score-details) .scoreDetails,
@@ -24,13 +24,13 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <header class="hero">
   <div class="heroMark" aria-hidden="true">🎴</div>
   <div class="heroText">
-    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge labBadge">LAB 2</span></div>
+    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge labBadge">LAB 3</span></div>
     <h1>赤ちゃん表情おみくじ</h1>
     <p class="heroCatch">かわいい一瞬を、おみくじに。 <span class="labInline">実験版</span></p>
     <p class="lead">v15を土台に、新しい遊び方を試す実験版です。元のv15は別URLでそのまま残しています。</p>
   </div>
 </header>
-<div class="labNotice">🧪 実験中：今日の一枚・追加運勢・奇跡の大逆転・3枚ストーリーを試せます</div>
+<div class="labNotice">🧪 実験中：ラッキーカラー・奇跡の大逆転・履歴GIFを試せます</div>
 <section class="card">
   <div class="step">CREATE</div>
   <h2>新しいおみくじを作る</h2>
@@ -52,6 +52,7 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
     <label class="toggle" style="margin-top:10px"><span><b style="display:block;margin-bottom:3px">豪華演出モード</b><span class="note">結果札・光・粒子・効果音などの演出を運勢ごとに豪華にします。デフォルトでONです。</span></span><input id="deluxeMode" type="checkbox" checked></label>
     <label class="toggle" style="margin-top:10px"><span><b style="display:block;margin-bottom:3px">表情度を表示する</b><span class="note">表情度は赤ちゃんの良し悪しではなく、この動画の中で写真の表情や見た目がどれだけ特徴的かを示す相対値です。ONにすると「くっきり・珍しさ・変化」の内訳も表示します。</span></span><input id="showScores" type="checkbox"></label>
     <label class="toggle" style="margin-top:10px"><span><b style="display:block;margin-bottom:3px">運勢の割り当てを表示する</b><span class="note">ONにすると、プレビュー写真ごとの「大吉・吉・凶」などを先に確認できます。通常は隠したまま遊べます。</span></span><input id="showFortunes" type="checkbox"></label>
+    <label class="toggle labTestToggle" style="margin-top:10px"><span><b style="display:block;margin-bottom:3px">大吉・大凶だけ出す（実験用）</b><span class="note">特別演出を試しやすくするLAB専用モードです。停止するたびに大吉か大凶のどちらかになります。</span></span><input id="labExtremeMode" type="checkbox"></label>
   </details>
 </section>
 <section id="previewSection" class="card" style="display:none">
@@ -66,6 +67,22 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
   <div class="playShell"><div id="stage"><img id="playImage" alt=""><div id="fortuneBadge"></div><div id="resultCard"><div id="resultHead">きょうの運勢</div><div id="resultText"></div><div id="message"></div></div><div id="rouletteBadge">タップでストップ</div></div></div>
   <div id="tapHint">画像をタップすると止まります</div><div class="row" style="justify-content:center;margin-top:12px"><button id="backBtn" class="secondary">戻る</button></div>
 </section>
+<section id="labHistorySection" class="card labHistoryCard">
+  <div class="step">HISTORY / GIF</div>
+  <h2>引いた写真の履歴</h2>
+  <p class="note">止まった写真を自動でためます。GIFを作るときは、引いた順ではなく元動画の時間順に並べ直します。</p>
+  <div id="labHistoryEmpty" class="note">まだ履歴はありません。</div>
+  <div id="labHistory"></div>
+  <div class="labGifActions">
+    <button id="labMakeGif" class="primary" type="button" disabled>履歴からGIFを作る</button>
+    <button id="labClearHistory" class="secondary" type="button" disabled>履歴をクリア</button>
+  </div>
+  <div id="labGifStatus" class="note" style="display:none"></div>
+  <div id="labGifResult" style="display:none">
+    <img id="labGifPreview" alt="履歴から作ったGIF">
+    <a id="labGifDownload" class="labDownload" download="baby-expression-history.gif">GIFを保存</a>
+  </div>
+</section>
 <section id="labCollectionSection" class="card labCollectionCard">
   <div class="step">COLLECTION</div>
   <h2>今日の一枚コレクション</h2>
@@ -77,7 +94,7 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <div id="bigOverlay"><div id="bigText">大吉！</div></div>
 <script src="./app.js?v=15" defer></script>
 <script src="./deluxe.js?v=15" defer></script>
-<script src="./experiment.js?v=2" defer></script>
+<script src="./experiment.js?v=3" defer></script>
 <script>
 (()=>{
   const scoreBox=document.getElementById('showScores');
@@ -104,6 +121,6 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
   sync();rename();
 })();
 </script>
-<!-- LAB2 deploy trigger -->
+<!-- LAB3 -->
 </body>
 </html>
