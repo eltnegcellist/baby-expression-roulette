@@ -1,10 +1,12 @@
 .labBadge{background:#34241d!important;color:#fff!important;border-color:#34241d!important}
 .labInline{display:inline-block;margin-left:4px;padding:2px 7px;border-radius:999px;background:#34241d;color:#fff;font-size:10px;vertical-align:middle}
 .labNotice{margin:-2px 0 14px;padding:10px 13px;border-radius:16px;background:linear-gradient(135deg,#fff3d9,#ffe8f0);border:1px solid #f0d2c4;font-size:12px;font-weight:850;color:#624638}
+.labTestToggle{background:#fff8dd;border:1px dashed #e0bd5b;border-radius:14px;padding:10px!important}
 #labFortuneExtra{display:none;margin-top:10px;padding-top:9px;border-top:1px dashed #dbcabb}
-.labCategoryTitle{font-size:12px;font-weight:950;text-align:center;color:#4b382e}
-.labCategoryTitle span{margin-left:5px;letter-spacing:.04em;color:#c48619;font-size:11px}
-.labCategoryLine{margin-top:4px;font-size:11px;line-height:1.45;text-align:center;color:#6d594e}
+#labLucky{display:grid;gap:6px}
+.labLuckyRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 8px;border-radius:10px;background:#fffaf4;font-size:10px;color:#745f53}
+.labLuckyRow b{display:flex;align-items:center;gap:5px;color:#4b382e;font-size:11px;text-align:right}
+.labLuckyRow i{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid #0002;box-shadow:0 1px 3px #0002}
 #labSpecialLine{display:none;margin:8px 0 2px;padding:7px 9px;border-radius:12px;font-size:11px;line-height:1.45;text-align:center;font-weight:900}
 #labSpecialLine.miracle{background:#fff6c8;color:#8a5b00;border:1px solid #f2d264}
 #labSpecialLine.reversal{background:linear-gradient(135deg,#f7e8ff,#e5f8ff,#fff3c9);color:#60407d;border:1px solid #d5c5ec}
@@ -19,14 +21,20 @@
 #stage.lab-reversal{animation:labReversalGlow 2s ease-out}
 @keyframes labMiracleGlow{0%{box-shadow:inset 0 0 0 transparent}30%{box-shadow:inset 0 0 65px #ffd70088,0 0 32px #ffd70088}100%{box-shadow:inset 0 0 0 transparent}}
 @keyframes labReversalGlow{0%{filter:saturate(.55) brightness(.78)}32%{filter:saturate(1.35) brightness(1.16);box-shadow:0 0 45px #d38cffbb}100%{filter:none}}
-#labStoryProgress{margin:9px auto 0;width:max-content;padding:5px 10px;border-radius:999px;background:#fff4df;border:1px solid #ecd9b8;color:#755632;font-size:10px;font-weight:900}
-#labStorySection{border-color:#ead6c8}
-#labStoryFrames{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.labStoryFrame{overflow:hidden;border-radius:15px;background:#fff;border:1px solid #eadfd8;box-shadow:0 5px 15px #0001}
-.labStoryFrame.special{border-color:#e4c96b;box-shadow:0 5px 18px #d8b84c33}
-.labStoryLabel{padding:6px 7px;background:#fff6e8;color:#785537;font-size:9px;font-weight:950;text-align:center}
-.labStoryFrame img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#eee}
-.labStoryCaption{padding:7px 6px 8px;font-size:9px;line-height:1.35;font-weight:800;color:#513d34;text-align:center}
+.labHistoryCard{border-color:#d9cfbf}
+#labHistory{display:flex;gap:7px;overflow-x:auto;padding:4px 1px 8px;margin-top:10px;scrollbar-width:thin}
+.labHistoryItem{flex:0 0 92px;overflow:hidden;border:1px solid #e4ddd5;border-radius:12px;background:#fff;box-shadow:0 3px 10px #0001}
+.labHistoryItem img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#eee}
+.labHistoryItem div{padding:6px}
+.labHistoryItem strong,.labHistoryItem span{display:block;line-height:1.25}
+.labHistoryItem strong{font-size:9px;color:#513d34}
+.labHistoryItem span{margin-top:2px;font-size:8px;color:#8b766b}
+.labGifActions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.labGifActions button{flex:1;min-width:130px}
+#labGifStatus{margin-top:9px}
+#labGifResult{margin-top:12px;text-align:center}
+#labGifPreview{display:block;width:min(100%,360px);max-height:480px;object-fit:contain;margin:0 auto;border-radius:14px;background:#111;box-shadow:0 7px 22px #0003}
+.labDownload{display:inline-block;margin-top:10px;padding:10px 15px;border-radius:999px;background:#7b4055;color:#fff;text-decoration:none;font-size:12px;font-weight:900}
 .labCollectionCard{border-color:#ead6c8}
 #labCollection{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
 .labPhotoCard{position:relative;overflow:hidden;border:1px solid #eadfd8;border-radius:15px;background:#fff;box-shadow:0 5px 14px #0001}
@@ -38,6 +46,5 @@
 @media(max-width:520px){
   #labCollection{grid-template-columns:repeat(2,1fr)}
   #labRareBadge{top:66px;font-size:12px;max-width:90%;white-space:normal;text-align:center}
-  #labStoryFrames{gap:5px}
-  .labStoryCaption{font-size:8px;padding:6px 4px}
+  .labLuckyRow{font-size:9px}.labLuckyRow b{font-size:10px}
 }
