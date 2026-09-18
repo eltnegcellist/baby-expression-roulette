@@ -65,8 +65,9 @@ clearTimeout(photoFocusTimer);
 photoFocusTimer=setTimeout(focusPhoto,1500);
 }
 unlockAudio=function(){primed=true;ensureAudio();if(box.checked)deluxeStart();else playSound('start');};
-preparePlay=function(x){deluxe=!!box.checked;playSection.classList.toggle('deluxe-mode',deluxe);clearFx();originals.preparePlay(x);};
+preparePlay=function(x){deluxe=!!box.checked;playSection.classList.toggle('deluxe-mode',deluxe);photoAction.style.display='none';clearFx();originals.preparePlay(x);};
 startRun=function(withSound=true){
+  photoAction.style.display='none';
   clearFx();
   originals.startRun(false);
   if(deluxe){
@@ -77,13 +78,20 @@ startRun=function(withSound=true){
   }
 };
 celebrate=function(){bigOverlay.classList.remove('deluxe');originals.celebrate();};
-stopRun=function(){stopDrumRoll();running=false;clearInterval(timer);timer=null;stage.classList.remove('pulse');if(activeCreation.mode==='omikuji'){const f=activeCreation.fortunes[currentIndex]||'吉';fortuneBadge.style.display='block';fortuneBadge.textContent=(FORTUNE_ICONS[f]||'🎴')+' '+f;fortuneBadge.style.color=FORTUNE_COLORS[f]||'#700';resultCard.style.display='block';resultText.textContent=f;resultText.style.color=FORTUNE_COLORS[f]||'#700';message.textContent=pick(f);rouletteBadge.style.display='none';if(deluxe)reveal(f);else if(f==='大吉')celebrate();else playSound(f);}else{rouletteBadge.style.display='block';rouletteBadge.textContent='この表情！';if(deluxe){stage.classList.add('result-reveal');stage.classList.remove('photo-focus');particles('吉');impact('吉');clearTimeout(photoFocusTimer);photoFocusTimer=setTimeout(focusPhoto,1500);}playSound('吉');}tapHint.textContent='もう一度タップすると再開します';};
+stopRun=function(){stopDrumRoll();running=false;clearInterval(timer);timer=null;stage.classList.remove('pulse');if(activeCreation.mode==='omikuji'){const f=activeCreation.fortunes[currentIndex]||'吉';fortuneBadge.style.display='block';fortuneBadge.textContent=(FORTUNE_ICONS[f]||'🎴')+' '+f;fortuneBadge.style.color=FORTUNE_COLORS[f]||'#700';resultCard.style.display='block';resultText.textContent=f;resultText.style.color=FORTUNE_COLORS[f]||'#700';message.textContent=pick(f);rouletteBadge.style.display='none';if(deluxe)reveal(f);else if(f==='大吉')celebrate();else playSound(f);photoAction.style.display='inline-flex';}else{rouletteBadge.style.display='block';rouletteBadge.textContent='この表情！';if(deluxe){stage.classList.add('result-reveal');stage.classList.remove('photo-focus');particles('吉');impact('吉');clearTimeout(photoFocusTimer);photoFocusTimer=setTimeout(focusPhoto,1500);}playSound('吉');}tapHint.textContent='もう一度タップすると再開します';};
 
 const photoViewer=document.createElement('div');
 photoViewer.id='photoViewer';
 photoViewer.setAttribute('aria-hidden','true');
 photoViewer.innerHTML='<img id="photoViewerImage" alt="赤ちゃんの写真"><button id="photoViewerClose" type="button" aria-label="写真表示を閉じる">×</button><div id="photoViewerHint">タップで戻る</div>';
 document.body.appendChild(photoViewer);
+const photoAction=document.createElement('button');
+photoAction.id='photoAction';
+photoAction.type='button';
+photoAction.innerHTML='<span class="photoActionIcon" aria-hidden="true">🖼️</span><span>写真を見る</span>';
+photoAction.setAttribute('aria-label','写真を全画面で見る');
+photoAction.style.display='none';
+stage.appendChild(photoAction);
 const photoViewerImage=photoViewer.querySelector('#photoViewerImage');
 const photoViewerClose=photoViewer.querySelector('#photoViewerClose');
 let photoViewerNative=false;
@@ -109,19 +117,10 @@ function closePhotoViewer(fromFullscreen=false){
   }
   photoViewerNative=false;
 }
-fortuneBadge.setAttribute('role','button');
-fortuneBadge.setAttribute('tabindex','0');
-fortuneBadge.setAttribute('aria-label','運勢。タップすると写真を全画面で表示');
-fortuneBadge.addEventListener('pointerdown',e=>{
+photoAction.addEventListener('pointerdown',e=>{
   if(running||!activeCreation||activeCreation.mode!=='omikuji')return;
-  e.preventDefault();e.stopPropagation();
-  openPhotoViewer();
+  e.preventDefault();e.stopPropagation();openPhotoViewer();
 },{passive:false});
-fortuneBadge.addEventListener('keydown',e=>{
-  if((e.key==='Enter'||e.key===' ')&&!running){
-    e.preventDefault();e.stopPropagation();openPhotoViewer();
-  }
-});
 photoViewer.addEventListener('pointerdown',e=>{
   e.preventDefault();e.stopPropagation();closePhotoViewer();
 },{passive:false});
