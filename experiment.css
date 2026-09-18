@@ -139,3 +139,20 @@
   #labResultDock #resultCard.labDocked{padding:12px 13px 13px!important}
   .labMiracleCenter{padding:20px 12px}
 }
+
+
+/* LAB 5: scrolling on the photo is scrolling, not a roulette tap */
+#stage{touch-action:pan-y}
+
+/* History entries are interactive result snapshots */
+.labHistoryItem{
+  border:1px solid #e4ddd5;
+  padding:0;
+  text-align:left;
+  color:inherit;
+  cursor:pointer
+}
+.labHistoryItem:active{transform:scale(.98)}
+.labHistoryItem em{
+  display:block;margin-top:4px;font-size:8px;font-style:normal;font-weight:900;color:#a44761
+}
