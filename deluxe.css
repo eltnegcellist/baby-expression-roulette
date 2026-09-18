@@ -54,13 +54,21 @@
 }
 
 /* v12.3: fortune badge opens a photo-only fullscreen viewer */
-#fortuneBadge[role="button"]{cursor:pointer;touch-action:manipulation}
-#fortuneBadge[role="button"]:after{
-  content:"  写真を見る";
-  font-size:.55em;
-  font-weight:800;
-  opacity:.68;
+#fortuneBadge[role="button"]{
+  cursor:pointer;
+  touch-action:manipulation;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.4em;
   white-space:nowrap
+}
+#fortuneBadge[role="button"]:after{
+  content:"🖼️";
+  font-size:1.12em;
+  line-height:1;
+  opacity:.9;
+  flex:0 0 auto
 }
 #photoViewer{
   position:fixed;
