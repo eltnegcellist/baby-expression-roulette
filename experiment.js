@@ -19,8 +19,12 @@ const gifPreview=document.getElementById('labGifPreview');
 const gifDownload=document.getElementById('labGifDownload');
 if(!stageEl||!resultCardEl||!collectionEl||!historyEl)return;
 
-const MIRACLE_DAIKICHI_RATE=.20;
-const MIRACLE_DAIKYO_RATE=.25;
+const MIRACLE_DAIKICHI_RATE=.35;
+const MIRACLE_DAIKYO_RATE=.40;
+const MIRACLE_DAIKICHI_RATE_TEST=.50;
+const MIRACLE_DAIKYO_RATE_TEST=.55;
+const MIRACLE_REPLAY_LEAD_SECONDS=1.2;
+const MIRACLE_REPLAY_RATE=.50;
 const LUCKY_COLORS=[
   {name:'さくらピンク',hex:'#f4a7b9'},{name:'ミルクホワイト',hex:'#fffaf2'},
   {name:'おひさまイエロー',hex:'#f6d365'},{name:'そらいろ',hex:'#8ecae6'},
@@ -48,6 +52,8 @@ let rareSecondTimer=null;
 let history=[];
 let gifUrl=null;
 let dockTimer=null;
+let miracleSequenceToken=0;
+let currentMiracleReplay=null;
 
 const playShellEl=stageEl.closest('.playShell');
 const resultDock=document.createElement('div');
@@ -56,12 +62,37 @@ playShellEl.insertAdjacentElement('afterend',resultDock);
 
 const miracleOverlay=document.createElement('div');
 miracleOverlay.id='labMiracleOverlay';
-miracleOverlay.innerHTML='<div class="labMiracleHalo"></div><div class="labMiracleCenter"><div class="labMiracleKicker"></div><div class="labMiracleTitle"></div><div class="labMiracleSub"></div></div><div class="labMiracleSparkles"></div>';
+miracleOverlay.innerHTML=
+  '<div class="labMiracleBackdrop"><img id="labMiracleBackdropImage" alt=""></div>'+
+  '<div class="labMiracleHalo"></div>'+
+  '<button id="labMiracleClose" type="button" aria-label="奇跡の一枚を閉じる">×</button>'+
+  '<div class="labMiracleReplayWrap">'+
+    '<div id="labMiracleReplayLabel">0.5× SLOW REPLAY</div>'+
+    '<video id="labMiracleVideo" playsinline muted preload="metadata"></video>'+
+    '<img id="labMiracleStill" alt="奇跡の一枚">'+
+  '</div>'+
+  '<div class="labMiracleCenter">'+
+    '<div class="labMiracleKicker"></div>'+
+    '<div class="labMiracleTitle"></div>'+
+    '<div class="labMiracleSub"></div>'+
+  '</div>'+
+  '<div class="labMiracleActions">'+
+    '<button id="labReplayAgain" type="button">↻ もう一度リプレイ</button>'+
+    '<button id="labMiracleBack" type="button">結果へ戻る</button>'+
+  '</div>'+
+  '<div class="labMiracleSparkles"></div>';
 document.body.appendChild(miracleOverlay);
 const miracleKicker=miracleOverlay.querySelector('.labMiracleKicker');
 const miracleTitle=miracleOverlay.querySelector('.labMiracleTitle');
 const miracleSub=miracleOverlay.querySelector('.labMiracleSub');
 const miracleSparkles=miracleOverlay.querySelector('.labMiracleSparkles');
+const miracleVideo=miracleOverlay.querySelector('#labMiracleVideo');
+const miracleStill=miracleOverlay.querySelector('#labMiracleStill');
+const miracleBackdropImage=miracleOverlay.querySelector('#labMiracleBackdropImage');
+const miracleReplayLabel=miracleOverlay.querySelector('#labMiracleReplayLabel');
+const miracleReplayAgain=miracleOverlay.querySelector('#labReplayAgain');
+const miracleClose=miracleOverlay.querySelector('#labMiracleClose');
+const miracleBack=miracleOverlay.querySelector('#labMiracleBack');
 
 const extra=document.createElement('div');
 extra.id='labFortuneExtra';
@@ -80,187 +111,15 @@ function pickLucky(){
   return {color:randomOf(LUCKY_COLORS),point:randomOf(LUCKY_POINTS)};
 }
 function renderLucky(lucky){
+  if(!lucky)return;
   renderLucky(lucky);
-}
-function specialFor(fortune){
-  if(fortune==='大吉'&&Math.random()<MIRACLE_DAIKICHI_RATE)return 'miracle';
-  if(fortune==='大凶'&&Math.random()<MIRACLE_DAIKYO_RATE)return 'reversal';
-  return null;
-}
-function playSpecialSound(kind){
-  try{
-    if(!primed||!ensureAudio())return;
-    if(kind==='reversal'){
-      tone(392,.12,0,.05,'triangle');tone(659,.15,.10,.055,'sine');
-      tone(988,.20,.23,.06,'sine');tone(1319,.35,.40,.065,'sine');
-    }else{
-      tone(784,.13,0,.055,'sine');tone(1047,.16,.10,.06,'sine');
-      tone(1319,.20,.22,.065,'sine');tone(1568,.34,.37,.07,'sine');
-    }
-  }catch(e){}
-}
-function fillMiracleSparkles(){
-  miracleSparkles.innerHTML='';
-  const chars=['✦','★','✧','●','🌈','✨'];
-  for(let i=0;i<54;i++){
-    const s=document.createElement('span');
-    s.textContent=chars[Math.floor(Math.random()*chars.length)];
-    s.style.setProperty('--x',(Math.random()*100)+'vw');
-    s.style.setProperty('--y',(Math.random()*100)+'vh');
-    s.style.setProperty('--d',(Math.random()*.65)+'s');
-    s.style.setProperty('--r',(-160+Math.random()*320)+'deg');
-    s.style.fontSize=(12+Math.random()*24)+'px';
-    miracleSparkles.appendChild(s);
-  }
-}
-function hideMiracleOverlay(){
-  miracleOverlay.className='';
-  miracleKicker.textContent='';miracleTitle.textContent='';miracleSub.textContent='';
-  miracleSparkles.innerHTML='';
-}
-function undockResult(){
-  clearTimeout(dockTimer);dockTimer=null;
-  if(resultCardEl.parentElement!==stageEl){
-    const roulette=document.getElementById('rouletteBadge');
-    stageEl.insertBefore(resultCardEl,roulette||null);
-  }
-  resultCardEl.classList.remove('labDocked');
-  resultDock.classList.remove('show');
-}
-function dockResult(){
-  if(running||!currentLab)return;
-  resultDock.appendChild(resultCardEl);
-  resultCardEl.classList.add('labDocked');
-  resultDock.classList.add('show');
-}
-function clearSpecial(){
-  clearTimeout(rareTimer);clearTimeout(rareSecondTimer);
-  rareTimer=rareSecondTimer=null;rare.className='';rare.textContent='';
-  stageEl.classList.remove('lab-miracle','lab-reversal');
-  hideMiracleOverlay();
-}
-function clearLab(){
-  clearSpecial();undockResult();extra.style.display='none';specialLine.style.display='none';currentLab=null;
-}
-function showMiracle(kind){
-  fillMiracleSparkles();
-  if(kind==='miracle'){
-    stageEl.classList.add('lab-miracle');
-    specialLine.textContent='✨ '+randomOf(MIRACLE_MESSAGES);
-    specialLine.className='miracle';specialLine.style.display='block';
-    miracleKicker.textContent='大吉の、その先へ';
-    miracleTitle.textContent='奇跡の一枚！';
-    miracleSub.textContent='✨ MIRACLE PHOTO ✨';
-    miracleOverlay.className='show miracle-mode';
-    playSpecialSound('miracle');
-    if(navigator.vibrate)navigator.vibrate([90,45,120,55,180,60,260]);
-    rareSecondTimer=setTimeout(hideMiracleOverlay,3000);
-    return;
-  }
-  miracleKicker.textContent='大凶……';
-  miracleTitle.textContent='……あれ？';
-  miracleSub.textContent='何かがおかしい';
-  miracleOverlay.className='show reversal-wait-mode';
-  if(navigator.vibrate)navigator.vibrate([70,80,70]);
-  rareSecondTimer=setTimeout(()=>{
-    if(running){hideMiracleOverlay();return;}
-    stageEl.classList.add('lab-reversal');
-    specialLine.textContent='🌈 '+randomOf(REVERSAL_MESSAGES);
-    specialLine.className='reversal';specialLine.style.display='block';
-    miracleKicker.textContent='運勢、ひっくり返りました';
-    miracleTitle.textContent='大逆転！';
-    miracleSub.textContent='🌈 奇跡の一枚 🌈';
-    miracleOverlay.className='show reversal-mode';
-    fillMiracleSparkles();
-    playSpecialSound('reversal');
-    if(navigator.vibrate)navigator.vibrate([120,40,120,40,220,60,320]);
-    setTimeout(hideMiracleOverlay,3200);
-  },850);
-}
-
-function renderHistory(){
-  historyEl.innerHTML='';
-  historyEmpty.style.display=history.length?'none':'block';
-  makeGifBtn.disabled=history.length<2;
-  clearHistoryBtn.disabled=!history.length;
-  history.forEach((x,i)=>{
-    const card=document.createElement('button');
-    card.type='button';
-    card.className='labHistoryItem';
-    card.setAttribute('aria-label',(i+1)+'回目 '+x.fortune+' の結果を見る');
-    card.innerHTML='<img alt=""><div><strong></strong><span></span><em>結果を見る</em></div>';
-    card.querySelector('img').src=x.image;
-    card.querySelector('strong').textContent=(i+1)+'回目 ・ '+x.fortune;
-    card.querySelector('span').textContent='元動画 '+x.time.toFixed(1)+'秒';
-    card.addEventListener('click',()=>showHistoryEntry(x));
-    historyEl.appendChild(card);
-  });
-}
-function addHistory(item){
-  const time=Number(activeCreation?.times?.[currentIndex]);
-  history.push({
-    image:playImageEl.currentSrc||playImageEl.src,
-    time:Number.isFinite(time)?time:currentIndex,
-    index:currentIndex,
-    fortune:item.fortune,
-    lucky:item.lucky,
-    special:item.special,
-    message:messageEl?.textContent||'',
-    drawnAt:Date.now()
-  });
-  if(history.length>40)history.shift();
-  renderHistory();
-}
-function showHistoryEntry(x){
-  clearInterval(timer);timer=null;running=false;stageEl.classList.remove('pulse');
-  clearSpecial();undockResult();
-  const idx=Number.isInteger(x.index)?x.index:
-    activeCreation?.times?.reduce((best,t,i)=>Math.abs(t-x.time)<Math.abs((activeCreation.times[best]??Infinity)-x.time)?i:best,0);
-  if(Number.isInteger(idx))currentIndex=idx;
-  playImageEl.src=x.image;
-  fortuneBadgeEl.style.display='block';
-  fortuneBadgeEl.textContent=(FORTUNE_ICONS[x.fortune]||'🎴')+' '+x.fortune;
-  fortuneBadgeEl.style.color=FORTUNE_COLORS[x.fortune]||'#700';
-  resultCardEl.style.display='block';
-  resultTextEl.textContent=x.fortune;
-  resultTextEl.style.color=FORTUNE_COLORS[x.fortune]||'#700';
-  messageEl.textContent=x.message||'このときの結果です。';
-  currentLab={fortune:x.fortune,lucky:x.lucky||pickLucky(),special:x.special,fromHistory:true};
-  renderLucky(currentLab.lucky);
-  specialLine.style.display='none';specialLine.className='';
-  if(x.special){
-    specialLine.textContent=x.special==='reversal'?'🌈 大逆転！奇跡の一枚':'✨ 奇跡の一枚';
-    specialLine.className=x.special==='reversal'?'reversal':'miracle';
-    specialLine.style.display='block';
-  }
-  saveBtn.textContent='♡ 今日の一枚に保存';saveBtn.disabled=false;
-  extra.style.display='block';
-  rouletteBadgeEl.style.display='none';
-  const photoAction=document.getElementById('photoAction');if(photoAction)photoAction.style.display='inline-flex';
-  tapHintEl.textContent='履歴を表示中。写真をタップするとルーレットを再開します';
-  dockResult();
-  document.getElementById('playSection')?.scrollIntoView({behavior:'smooth',block:'start'});
-}
-function clearGifResult(){
-  if(gifUrl){URL.revokeObjectURL(gifUrl);gifUrl=null;}
-  gifResult.style.display='none';gifPreview.removeAttribute('src');gifDownload.removeAttribute('href');
-}
-function showLabResult(){
-  if(!activeCreation||activeCreation.mode!=='omikuji'||running)return;
-  const fortune=(resultTextEl.textContent||'吉').trim();
-  const lucky=pickLucky();
-  const special=specialFor(fortune);
-  currentLab={fortune,lucky,special};
-  luckyEl.innerHTML=
-    '<div class="labLuckyRow"><span>今日のラッキーカラー</span><b><i style="background:'+lucky.color.hex+'"></i>'+lucky.color.name+'</b></div>'+
-    '<div class="labLuckyRow"><span>今日のラッキーポイント</span><b>✨ '+lucky.point+'</b></div>';
   specialLine.style.display='none';specialLine.className='';
   saveBtn.textContent='♡ 今日の一枚に保存';saveBtn.disabled=false;
   extra.style.display='block';
   addHistory(currentLab);
   clearTimeout(dockTimer);
-  dockTimer=setTimeout(dockResult,1550);
-  if(special)rareTimer=setTimeout(()=>{if(!running)showMiracle(special);},special==='reversal'?1450:1150);
+  dockTimer=setTimeout(dockResult,special?6200:1550);
+  if(special)rareTimer=setTimeout(()=>{if(!running)showMiracle(special);},special==='reversal'?1100:900);
 }
 
 // LAB 5: distinguish a real tap from a scroll gesture.
@@ -315,7 +174,8 @@ saveBtn.addEventListener('pointerdown',async e=>{
       id:'p'+Date.now()+Math.random().toString(36).slice(2,7),createdAt:Date.now(),
       image:playImageEl.currentSrc||playImageEl.src,fortune:currentLab.fortune,
       luckyColor:currentLab.lucky.color.name,luckyColorHex:currentLab.lucky.color.hex,
-      luckyPoint:currentLab.lucky.point,special:currentLab.special
+      luckyPoint:currentLab.lucky.point,special:currentLab.special,
+      targetTime:Number(activeCreation?.times?.[currentIndex])
     });
     saveBtn.textContent='✓ 保存しました';await renderCollection();
   }catch(err){console.error(err);saveBtn.disabled=false;saveBtn.textContent='保存できませんでした';}
