@@ -51,6 +51,7 @@ const MIRACLE_DAIKICHI_RATE=.35;
 const MIRACLE_DAIKYO_RATE=.40;
 const MIRACLE_REPLAY_LEAD_SECONDS=3.0;
 const MIRACLE_REPLAY_RATE=.42;
+const EARLY_REPLAY_THRESHOLD=2.5;
 
 const LUCKY_COLORS=[
   {name:'さくらピンク',hex:'#f4a7b9'},{name:'ミルクホワイト',hex:'#fffaf2'},
@@ -82,6 +83,7 @@ let miracleSequenceToken=0;
 let currentMiracleReplay=null;
 let miracleAutoCloseTimer=null;
 let replaySourceKey=null;
+let replayWarmupGeneration=0;
 
 const playShellEl=stageEl.closest('.playShell');
 const resultDock=document.createElement('div');
@@ -223,6 +225,39 @@ function waitForVideoEvent(el,name,timeout=4000){
     el.addEventListener(name,on,{once:true});
   });
 }
+async function seekReplayVideo(el,time,token,timeout=1800){
+  if(token!==miracleSequenceToken)return false;
+  const duration=Number.isFinite(el.duration)&&el.duration>0?el.duration:null;
+  const safe=duration?Math.max(0,Math.min(duration-.04,Number(time)||0)):Math.max(0,Number(time)||0);
+
+  if(Math.abs((el.currentTime||0)-safe)<=.025){
+    await waitForPresentedFrame(el,300);
+    return token===miracleSequenceToken;
+  }
+
+  const ok=await new Promise(resolve=>{
+    let done=false;
+    let to=null;
+    const finish=value=>{
+      if(done)return;
+      done=true;
+      clearTimeout(to);
+      el.removeEventListener('seeked',onSeeked);
+      el.removeEventListener('timeupdate',onTimeUpdate);
+      resolve(value);
+    };
+    const closeEnough=()=>Math.abs((el.currentTime||0)-safe)<=.12;
+    const onSeeked=()=>finish(closeEnough());
+    const onTimeUpdate=()=>{if(closeEnough())finish(true);};
+    el.addEventListener('seeked',onSeeked);
+    el.addEventListener('timeupdate',onTimeUpdate);
+    to=setTimeout(()=>finish(closeEnough()),timeout);
+    try{el.currentTime=safe;}catch(e){finish(false);}
+  });
+  if(!ok||token!==miracleSequenceToken)return false;
+  await waitForPresentedFrame(el,350);
+  return token===miracleSequenceToken;
+}
 function replaySourceUrl(){
   return objectUrl || video?.currentSrc || video?.src || '';
 }
@@ -232,6 +267,8 @@ function replaySourceAvailable(){
   return !!(src&&lastFile&&activeCreation?.times?.length&&key&&replaySourceKey===key&&currentSourceKey===key);
 }
 function primeMiracleReplaySource(x){
+  const warmupId=++replayWarmupGeneration;
+  const sequenceAtPrime=miracleSequenceToken;
   let key=x?.sourceKey||null;
   // Backward compatibility for a roulette created earlier in this same session.
   if(!key&&x&&currentCreation&&x.id===currentCreation.id&&currentSourceKey){
@@ -259,6 +296,7 @@ function primeMiracleReplaySource(x){
     const warm=miracleVideo.play();
     if(warm&&typeof warm.then==='function'){
       warm.then(()=>{
+        if(warmupId!==replayWarmupGeneration||sequenceAtPrime!==miracleSequenceToken)return;
         miracleVideo.pause();
         try{miracleVideo.currentTime=0;}catch(e){}
       }).catch(()=>{});
@@ -266,6 +304,7 @@ function primeMiracleReplaySource(x){
   }catch(e){}
 }
 function cancelMiracleSequence(clearReplay=false){
+  replayWarmupGeneration++;
   miracleSequenceToken++;
   clearTimeout(miracleAutoCloseTimer);
   miracleAutoCloseTimer=null;
@@ -287,6 +326,7 @@ function hideMiracleOverlay(clearReplay=false){
 }
 async function attemptReplay(src,targetTime,token,forceReload=false){
   if(token!==miracleSequenceToken)return false;
+  replayWarmupGeneration++;
   try{
     miracleVideo.pause();
     if(forceReload||miracleVideo.src!==src){
@@ -309,8 +349,8 @@ async function attemptReplay(src,targetTime,token,forceReload=false){
     const start=Math.max(0,target-MIRACLE_REPLAY_LEAD_SECONDS);
     const availableLead=Math.max(.04,target-start);
     const replayRate=availableLead<.9?Math.max(.18,availableLead/2.4):MIRACLE_REPLAY_RATE;
-    miracleVideo.currentTime=start;
-    try{await waitForVideoEvent(miracleVideo,'seeked',3000);}catch(e){}
+
+    if(!await seekReplayVideo(miracleVideo,start,token,1800))return false;
     if(token!==miracleSequenceToken)return false;
 
     miracleVideo.muted=true;
@@ -318,25 +358,44 @@ async function attemptReplay(src,targetTime,token,forceReload=false){
     miracleReplayLabel.textContent=(Math.round(replayRate*100)/100)+'× SLOW REPLAY';
     await miracleVideo.play();
 
+    let reachedTarget=false;
+    const expectedMs=((target-start)/Math.max(.1,replayRate))*1000;
+    const maxMs=Math.min(14000,Math.max(3500,expectedMs+2600));
+    const began=performance.now();
+    let lastProgressAt=began;
+    let lastTime=miracleVideo.currentTime;
+
     await new Promise(resolve=>{
       let raf=0;
+      const finish=()=>{
+        try{miracleVideo.pause();}catch(e){}
+        cancelAnimationFrame(raf);
+        resolve();
+      };
       const tick=()=>{
-        if(token!==miracleSequenceToken){
-          cancelAnimationFrame(raf);
-          resolve();
-          return;
+        if(token!==miracleSequenceToken)return finish();
+        const now=performance.now();
+        const t=miracleVideo.currentTime||0;
+        if(t>lastTime+.012){
+          lastTime=t;
+          lastProgressAt=now;
         }
-        if(miracleVideo.currentTime>=target-.035||miracleVideo.ended){
-          miracleVideo.pause();
-          cancelAnimationFrame(raf);
-          resolve();
-          return;
+        if(t>=target-.05){
+          reachedTarget=true;
+          return finish();
         }
+        if(miracleVideo.ended){
+          reachedTarget=t>=target-.15;
+          return finish();
+        }
+        if(now-began>maxMs)return finish();
+        if(now-lastProgressAt>1900)return finish();
         raf=requestAnimationFrame(tick);
       };
       tick();
     });
-    return token===miracleSequenceToken;
+
+    return token===miracleSequenceToken&&reachedTarget;
   }catch(err){
     console.warn('miracle replay attempt failed',err);
     try{miracleVideo.pause();}catch(e){}
@@ -386,9 +445,8 @@ async function captureReverseReplayFrames(src,targetTime,token){
       if(token!==miracleSequenceToken)return null;
       const p=count===1?0:n/(count-1);
       const t=target+span*p;
-      miracleVideo.currentTime=t;
-      try{await waitForVideoEvent(miracleVideo,'seeked',1800);}catch(e){}
-      await waitForPresentedFrame(miracleVideo,500);
+      const sought=await seekReplayVideo(miracleVideo,t,token,1500);
+      if(!sought)continue;
       if(token!==miracleSequenceToken)return null;
       try{
         c.drawImage(miracleVideo,0,0,canvas.width,canvas.height);
@@ -422,18 +480,18 @@ async function replayReverseTowardTarget(src,targetTime,token){
   }
   return token===miracleSequenceToken;
 }
-async function replayOriginalMoment(targetTime,token){
+function replayPlan(targetTime,sourceAvailable){
+  const target=Math.max(0,Number(targetTime)||0);
+  const early=target<EARLY_REPLAY_THRESHOLD;
+  if(early&&sourceAvailable)return {route:'reverse-source',early:true,targetTime:target};
+  if(!early&&sourceAvailable)return {route:'forward-source',early:false,targetTime:target};
+  if(early&&!sourceAvailable)return {route:'reverse-frames',early:true,targetTime:target};
+  return {route:'photo-only',early:false,targetTime:target};
+}
+
+async function runForwardSourceReplay(targetTime,token){
   if(!replaySourceAvailable())return false;
   const src=replaySourceUrl();
-  const target=Math.max(0,Number(targetTime)||0);
-
-  // Near the beginning there is not enough footage before the selected frame.
-  // In that case, approach it from later footage in reverse.
-  if(target<2.5){
-    if(await replayReverseTowardTarget(src,target,token))return true;
-    if(token!==miracleSequenceToken)return false;
-  }
-
   miracleReplayLabel.textContent='0.42× SLOW REPLAY';
   miracleVideo.style.display='block';
   miracleStill.style.display='none';
@@ -454,53 +512,78 @@ async function replayOriginalMoment(targetTime,token){
   if(token!==miracleSequenceToken)return false;
   return await attemptReplay(src,targetTime,token,true);
 }
-async function replayExtractedFrames(targetTime,token){
+
+async function runReverseSourceReplay(targetTime,token){
+  if(!replaySourceAvailable())return false;
+  return await replayReverseTowardTarget(replaySourceUrl(),targetTime,token);
+}
+
+async function replayReverseFramesFallback(targetTime,token){
+  const target=Math.max(0,Number(targetTime)||0);
+  if(target>=EARLY_REPLAY_THRESHOLD)return false;
+
   const times=activeCreation?.times||[];
   const frames=activeCreation?.frames||[];
   if(!times.length||!frames.length)return false;
 
-  const target=Number(targetTime)||0;
-  let order=times.map((t,i)=>({t:Number(t)||0,i}))
-    .sort((a,b)=>a.t-b.t);
+  const order=times.map((t,i)=>({t:Number(t)||0,i})).sort((a,b)=>a.t-b.t);
   const at=order.reduce((best,x,idx)=>
     Math.abs(x.t-target)<Math.abs(order[best].t-target)?idx:best,0);
-
-  let seq;
-  const reverseApproach=target<2.5;
-  if(reverseApproach){
-    seq=order.slice(at,Math.min(order.length,at+6)).reverse();
-    miracleReplayLabel.textContent='↶ REVERSE REPLAY';
-    miracleSub.textContent='逆向きフレームリプレイ';
-  }else{
-    const from=Math.max(0,at-4);
-    seq=order.slice(from,at+1);
-  }
+  let seq=order.slice(at,Math.min(order.length,at+6)).reverse();
   if(seq.length<2&&order.length>1){
-    seq=reverseApproach
-      ? order.slice(at,Math.min(order.length,at+2)).reverse()
-      : order.slice(Math.max(0,at-1),Math.min(order.length,at+1));
+    seq=order.slice(at,Math.min(order.length,at+2)).reverse();
   }
   if(!seq.length)return false;
 
   miracleVideo.style.display='none';
   miracleStill.style.display='block';
-  if(target>=2.5){
-    miracleReplayLabel.textContent='SLOW REPLAY';
-    miracleSub.textContent='スローリプレイ';
-  }
+  miracleReplayLabel.textContent='↶ REVERSE REPLAY';
   miracleKicker.textContent='奇跡の瞬間へ';
+  miracleSub.textContent='逆向きフレームリプレイ';
 
-  // Always keep the fallback visibly on screen long enough to read as replay.
-  const hold=Math.max(500,Math.min(800,2600/seq.length));
+  const hold=Math.max(500,Math.min(800,3000/seq.length));
+  let shown=0;
   for(const x of seq){
     if(token!==miracleSequenceToken)return false;
     const src=frames[x.i];
     if(!src)continue;
     miracleStill.src=src;
     miracleBackdropImage.src=src;
+    shown++;
     await sleep(hold);
   }
-  return token===miracleSequenceToken;
+  return shown>0&&token===miracleSequenceToken;
+}
+
+async function executeReplayPlan(targetTime,token,frameSrc){
+  const plan=replayPlan(targetTime,replaySourceAvailable());
+  let replayed=false;
+
+  if(plan.route==='reverse-source'){
+    replayed=await runReverseSourceReplay(targetTime,token);
+    if(!replayed&&token===miracleSequenceToken){
+      replayed=await replayReverseFramesFallback(targetTime,token);
+    }
+  }else if(plan.route==='forward-source'){
+    replayed=await runForwardSourceReplay(targetTime,token);
+    // Mid-video intentionally never degrades into sparse still-frame replay.
+  }else if(plan.route==='reverse-frames'){
+    replayed=await replayReverseFramesFallback(targetTime,token);
+  }
+
+  if(token!==miracleSequenceToken)return false;
+
+  if(!replayed){
+    miracleVideo.style.display='none';
+    miracleStill.style.display='block';
+    miracleStill.src=frameSrc;
+    miracleBackdropImage.src=frameSrc;
+    miracleReplayLabel.textContent='REPLAY';
+    miracleSub.textContent=plan.early?'逆再生を準備できませんでした':'元動画の連続スローを開始できませんでした';
+    await sleep(700);
+  }
+
+  return replayed;
 }
 function showFinalMiraclePhoto(kind,frameSrc){
   try{miracleVideo.pause();}catch(e){}
@@ -569,26 +652,7 @@ async function playMiracleSequence(kind,replayAgain=false){
   miracleTitle.textContent='';
   miracleSub.textContent='0.5× SLOW REPLAY';
 
-  let replayed=await replayOriginalMoment(targetTime,token);
-  if(token!==miracleSequenceToken)return;
-
-  if(!replayed){
-    const early=(Number(targetTime)||0)<2.5;
-    if(early){
-      miracleReplayLabel.textContent='↶ REVERSE REPLAY';
-      miracleSub.textContent='逆向きフレームリプレイ';
-      replayed=await replayExtractedFrames(targetTime,token);
-    }else{
-      miracleVideo.style.display='none';
-      miracleStill.style.display='block';
-      miracleStill.src=frameSrc;
-      miracleBackdropImage.src=frameSrc;
-      miracleReplayLabel.textContent='SLOW REPLAY';
-      miracleSub.textContent='元動画を利用できないため写真へ移ります';
-      await sleep(700);
-    }
-  }
-  if(token!==miracleSequenceToken)return;
+  await executeReplayPlan(targetTime,token,frameSrc);
   if(token!==miracleSequenceToken)return;
 
   showFinalMiraclePhoto(kind,frameSrc);
@@ -663,26 +727,7 @@ async function replayMiracleImmediately(){
 
   try{miracleVideo.pause();}catch(e){}
 
-  let replayed=await replayOriginalMoment(replay.targetTime,token);
-  if(token!==miracleSequenceToken)return;
-
-  if(!replayed){
-    const early=(Number(replay.targetTime)||0)<2.5;
-    if(early){
-      miracleReplayLabel.textContent='↶ REVERSE REPLAY';
-      miracleSub.textContent='逆向きフレームリプレイ';
-      replayed=await replayExtractedFrames(replay.targetTime,token);
-    }else{
-      miracleVideo.style.display='none';
-      miracleStill.style.display='block';
-      miracleStill.src=replay.frameSrc;
-      miracleBackdropImage.src=replay.frameSrc;
-      miracleReplayLabel.textContent='SLOW REPLAY';
-      miracleSub.textContent='元動画を利用できないため写真へ移ります';
-      await sleep(700);
-    }
-  }
-  if(token!==miracleSequenceToken)return;
+  await executeReplayPlan(replay.targetTime,token,replay.frameSrc);
   if(token!==miracleSequenceToken)return;
 
   showFinalMiraclePhoto(replay.kind,replay.frameSrc);
