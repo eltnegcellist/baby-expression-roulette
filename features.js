@@ -2,6 +2,7 @@
 const stageEl=document.getElementById('stage');
 const resultCardEl=document.getElementById('resultCard');
 const resultTextEl=document.getElementById('resultText');
+const resultHeadEl=document.getElementById('resultHead');
 const messageEl=document.getElementById('message');
 const fortuneBadgeEl=document.getElementById('fortuneBadge');
 const rouletteBadgeEl=document.getElementById('rouletteBadge');
@@ -146,6 +147,20 @@ function specialFor(fortune){
   if(fortune==='大吉'&&Math.random()<MIRACLE_DAIKICHI_RATE)return 'miracle';
   if(fortune==='大凶'&&Math.random()<MIRACLE_DAIKYO_RATE)return 'reversal';
   return null;
+}
+function specialFortuneDisplay(special,baseFortune){
+  if(special==='miracle')return {head:'きょうの運勢',fortune:'特大吉',badge:'✨ 特大吉'};
+  if(special==='reversal')return {head:'大凶かと思ったら…',fortune:'大逆転大吉',badge:'🌈 大逆転大吉'};
+  return {head:'きょうの運勢',fortune:baseFortune,badge:(FORTUNE_ICONS[baseFortune]||'🎴')+' '+baseFortune};
+}
+function applySpecialFortuneDisplay(special,baseFortune){
+  const d=specialFortuneDisplay(special,baseFortune);
+  if(resultHeadEl)resultHeadEl.textContent=d.head;
+  resultTextEl.textContent=d.fortune;
+  resultTextEl.style.color=FORTUNE_COLORS[baseFortune==='大凶'?'大吉':baseFortune]||'#700';
+  fortuneBadgeEl.textContent=d.badge;
+  fortuneBadgeEl.style.color=FORTUNE_COLORS[baseFortune==='大凶'?'大吉':baseFortune]||'#700';
+  return d;
 }
 function playSpecialSound(kind){
   try{
@@ -702,7 +717,7 @@ function renderHistory(){
     card.setAttribute('aria-label',(i+1)+'回目 '+x.fortune+' の結果を見る');
     card.innerHTML='<img alt=""><div><strong></strong><span></span><em>結果を見る</em></div>';
     card.querySelector('img').src=x.image;
-    card.querySelector('strong').textContent=(i+1)+'回目 ・ '+x.fortune;
+    card.querySelector('strong').textContent=(i+1)+'回目 ・ '+(x.displayFortune||specialFortuneDisplay(x.special,x.fortune).fortune);
     card.querySelector('span').textContent='元動画 '+x.time.toFixed(1)+'秒';
     card.addEventListener('click',()=>showHistoryEntry(x));
     historyEl.appendChild(card);
@@ -716,6 +731,7 @@ function addHistory(item){
     targetTime:Number.isFinite(time)?time:currentIndex,
     index:currentIndex,
     fortune:item.fortune,
+    displayFortune:item.displayFortune||specialFortuneDisplay(item.special,item.fortune).fortune,
     lucky:item.lucky,
     special:item.special,
     message:messageEl?.textContent||'',
@@ -738,15 +754,20 @@ function showHistoryEntry(x){
 
   playImageEl.src=x.image;
   fortuneBadgeEl.style.display='block';
-  fortuneBadgeEl.textContent=(FORTUNE_ICONS[x.fortune]||'🎴')+' '+x.fortune;
-  fortuneBadgeEl.style.color=FORTUNE_COLORS[x.fortune]||'#700';
 
   resultCardEl.style.display='block';
-  resultTextEl.textContent=x.fortune;
-  resultTextEl.style.color=FORTUNE_COLORS[x.fortune]||'#700';
+  if(x.special){
+    applySpecialFortuneDisplay(x.special,x.fortune);
+  }else{
+    if(resultHeadEl)resultHeadEl.textContent='きょうの運勢';
+    fortuneBadgeEl.textContent=(FORTUNE_ICONS[x.fortune]||'🎴')+' '+x.fortune;
+    fortuneBadgeEl.style.color=FORTUNE_COLORS[x.fortune]||'#700';
+    resultTextEl.textContent=x.fortune;
+    resultTextEl.style.color=FORTUNE_COLORS[x.fortune]||'#700';
+  }
   messageEl.textContent=x.message||'このときの結果です。';
 
-  currentLab={fortune:x.fortune,lucky:x.lucky||pickLucky(),special:x.special,fromHistory:true};
+  currentLab={fortune:x.fortune,displayFortune:x.displayFortune||specialFortuneDisplay(x.special,x.fortune).fortune,lucky:x.lucky||pickLucky(),special:x.special,fromHistory:true};
   renderLucky(currentLab.lucky);
 
   specialLine.style.display='none';
@@ -789,7 +810,12 @@ function showLabResult(){
   const special=specialFor(fortune);
   const targetTime=Number(activeCreation?.times?.[currentIndex]);
 
-  currentLab={fortune,lucky,special};
+  if(resultHeadEl)resultHeadEl.textContent='きょうの運勢';
+  currentLab={fortune,lucky,special,displayFortune:fortune};
+  if(special){
+    const display=applySpecialFortuneDisplay(special,fortune);
+    currentLab.displayFortune=display.fortune;
+  }
   renderLucky(lucky);
   specialLine.style.display='none';
   specialLine.className='';
@@ -853,6 +879,7 @@ stopRun=function(){
 const previousStart=startRun;
 startRun=function(withSound=true){
   clearLab();
+  if(resultHeadEl)resultHeadEl.textContent='きょうの運勢';
   previousStart(withSound);
 };
 
@@ -879,6 +906,7 @@ saveBtn.addEventListener('pointerdown',async e=>{
       createdAt:Date.now(),
       image:playImageEl.currentSrc||playImageEl.src,
       fortune:currentLab.fortune,
+      displayFortune:currentLab.displayFortune||specialFortuneDisplay(currentLab.special,currentLab.fortune).fortune,
       luckyColor:currentLab.lucky.color.name,
       luckyColorHex:currentLab.lucky.color.hex,
       luckyPoint:currentLab.lucky.point,
@@ -1200,7 +1228,7 @@ async function renderCollection(){
     card.innerHTML='<img alt="保存した赤ちゃんの写真"><div class="labPhotoMeta"><strong></strong><span></span></div><button type="button" class="labDelete">削除</button>';
     card.querySelector('img').src=x.image;
     const mark=x.special==='reversal'?'🌈 ':x.special==='miracle'?'✨ ':'';
-    card.querySelector('strong').textContent=mark+x.fortune+' ・ '+(x.luckyColor||'')+' ・ '+(x.luckyPoint||'');
+    card.querySelector('strong').textContent=mark+(x.displayFortune||specialFortuneDisplay(x.special,x.fortune).fortune)+' ・ '+(x.luckyColor||'')+' ・ '+(x.luckyPoint||'');
     card.querySelector('span').textContent=d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
     card.querySelector('.labDelete').addEventListener('click',async()=>{
       await labDelete(x.id);
