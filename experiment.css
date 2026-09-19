@@ -360,3 +360,16 @@ body.labGifViewerOpen{overflow:hidden}
   border:1px solid #ffffff70;background:rgba(255,255,255,.12);
   color:#fff;font-weight:900;font-size:12px
 }
+
+
+/* Hotfix: keep the miracle close button pinned to the top-right */
+#labMiracleClose{
+  position:absolute!important;
+  right:max(12px,env(safe-area-inset-right))!important;
+  top:max(12px,env(safe-area-inset-top))!important;
+  left:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+  flex:none!important;
+  z-index:60!important;
+}
