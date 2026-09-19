@@ -11,7 +11,7 @@
 <title>赤ちゃん表情おみくじ LAB</title>
 <link rel="stylesheet" href="./style.css?v=15">
 <link rel="stylesheet" href="./deluxe.css?v=15">
-<link rel="stylesheet" href="./experiment.css?v=130">
+<link rel="stylesheet" href="./experiment.css?v=140">
 <style>
 body:not(.show-score-details) .scoreChip,
 body:not(.show-score-details) .scoreDetails,
@@ -24,7 +24,7 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <header class="hero">
   <div class="heroMark" aria-hidden="true">🎴</div>
   <div class="heroText">
-    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge labBadge">LAB 13</span></div>
+    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge labBadge">LAB 14</span></div>
     <h1>赤ちゃん表情おみくじ</h1>
     <p class="heroCatch">かわいい一瞬を、おみくじに。 <span class="labInline">実験版</span></p>
     <p class="lead">v15を土台に、新しい遊び方を試す実験版です。元のv15は別URLでそのまま残しています。</p>
@@ -84,6 +84,24 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
     <a id="labGifDownload" class="labDownload" download="baby-expression-history.gif">GIFを保存して見る</a>
   </div>
 </section>
+<section id="labDiagnosticsSection" class="card labDiagCard">
+  <div class="step">LAB DIAGNOSTICS</div>
+  <h2>リプレイ診断</h2>
+  <p class="note">実際に選ばれた再生経路と失敗理由を記録します。動画そのものや写真はログに含めません。</p>
+  <div class="labDiagStatus">
+    <div id="labDiagSummary">自己診断: 実行中…</div>
+    <div id="labDiagRoute">直近の経路: —</div>
+  </div>
+  <div class="labDiagActions">
+    <button id="labDiagRunTests" class="secondary" type="button">自己診断を再実行</button>
+    <button id="labDiagCopy" class="primary" type="button">診断データをコピー</button>
+    <button id="labDiagClear" class="secondary" type="button">ログをクリア</button>
+  </div>
+  <details class="labDiagDetails">
+    <summary>診断ログを見る</summary>
+    <pre id="labDiagLog">まだ診断ログはありません。</pre>
+  </details>
+</section>
 <section id="labCollectionSection" class="card labCollectionCard">
   <div class="step">COLLECTION</div>
   <h2>今日の一枚コレクション</h2>
@@ -95,7 +113,7 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <div id="bigOverlay"><div id="bigText">大吉！</div></div>
 <script src="./app.js?v=23" defer></script>
 <script src="./deluxe.js?v=23" defer></script>
-<script src="./experiment.js?v=130" defer></script>
+<script src="./experiment.js?v=140" defer></script>
 <script>
 (()=>{
   const scoreBox=document.getElementById('showScores');
@@ -122,6 +140,6 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
   sync();rename();
 })();
 </script>
-<!-- LAB13 -->
+<!-- LAB14 -->
 </body>
 </html>
