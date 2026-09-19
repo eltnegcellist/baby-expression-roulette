@@ -373,3 +373,6 @@ body.labGifViewerOpen{overflow:hidden}
   flex:none!important;
   z-index:60!important;
 }
+
+/* LAB 7: miracle/reversal animation has no close button */
+#labMiracleClose{display:none!important}
