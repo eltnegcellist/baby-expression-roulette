@@ -277,6 +277,8 @@ function showFinalMiraclePhoto(kind,frameSrc){
   },4200);
 }
 async function playMiracleSequence(kind,replayAgain=false){
+  clearTimeout(miracleAutoCloseTimer);
+  miracleAutoCloseTimer=null;
   const frameSrc=currentMiracleReplay?.frameSrc||(playImageEl.currentSrc||playImageEl.src);
   const targetTime=currentMiracleReplay?.targetTime??Number(activeCreation?.times?.[currentIndex]);
   currentMiracleReplay={kind,frameSrc,targetTime,index:currentIndex};
@@ -370,14 +372,50 @@ function showMiracle(kind){
   playMiracleSequence(kind,false);
 }
 
-miracleReplayAgain.addEventListener('click',e=>{
-  e.preventDefault();e.stopPropagation();
-  if(currentMiracleReplay)playMiracleSequence(currentMiracleReplay.kind,true);
-});
-replaySpecialBtn.addEventListener('click',e=>{
-  e.preventDefault();e.stopPropagation();
-  if(currentMiracleReplay)playMiracleSequence(currentMiracleReplay.kind,true);
-});
+async function replayMiracleImmediately(){
+  if(!currentMiracleReplay)return;
+
+  clearTimeout(miracleAutoCloseTimer);
+  miracleAutoCloseTimer=null;
+
+  const replay=currentMiracleReplay;
+  const token=++miracleSequenceToken;
+
+  document.body.classList.add('labMiracleOpen');
+  miracleOverlay.className='show replay-mode '+(replay.kind==='reversal'?'reversal-replay':'miracle-replay');
+  miracleKicker.textContent='もう一度、その瞬間へ';
+  miracleTitle.textContent='';
+  miracleSub.textContent='0.5× SLOW REPLAY';
+  miracleReplayLabel.textContent='0.5× SLOW REPLAY';
+  miracleSparkles.innerHTML='';
+  miracleStill.style.display='none';
+  miracleBackdropImage.src=replay.frameSrc;
+
+  try{miracleVideo.pause();}catch(e){}
+
+  const replayed=await replayOriginalMoment(replay.targetTime,token);
+  if(token!==miracleSequenceToken)return;
+
+  if(!replayed){
+    miracleReplayLabel.textContent='PHOTO REVEAL';
+    miracleSub.textContent='動画リプレイを開始できなかったため、写真演出へ';
+    await sleep(250);
+  }
+  if(token!==miracleSequenceToken)return;
+
+  showFinalMiraclePhoto(replay.kind,replay.frameSrc);
+}
+
+miracleReplayAgain.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  e.stopPropagation();
+  replayMiracleImmediately();
+},{passive:false});
+replaySpecialBtn.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  e.stopPropagation();
+  replayMiracleImmediately();
+},{passive:false});
 const closeMiracle=()=>{
   hideMiracleOverlay(false);
   dockResult();
