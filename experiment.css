@@ -281,3 +281,13 @@
   #labMiracleOverlay .labMiracleActions{bottom:max(12px,env(safe-area-inset-bottom))}
   #labMiracleOverlay .labMiracleActions button{font-size:11px;padding:10px 9px}
 }
+
+
+/* LAB 6.1: lock background while miracle replay is open */
+body.labMiracleOpen{overflow:hidden}
+#labReplaySpecial{
+  display:none;margin:9px auto 0;padding:8px 12px;border-radius:999px;
+  background:linear-gradient(135deg,#fff7c2,#f1d6ff);
+  color:#70406f;border:1px solid #e2c579;
+  font-size:11px;font-weight:950;box-shadow:none
+}
