@@ -298,10 +298,71 @@ async function attemptReplay(src,targetTime,token,forceReload=false){
     return false;
   }
 }
+async function replayReverseTowardTarget(src,targetTime,token){
+  if(token!==miracleSequenceToken)return false;
+  try{
+    miracleVideo.pause();
+    if(miracleVideo.src!==src){
+      miracleVideo.removeAttribute('src');
+      miracleVideo.load();
+      miracleVideo.src=src;
+      miracleVideo.load();
+    }
+    if(miracleVideo.readyState<1){
+      await waitForVideoEvent(miracleVideo,'loadedmetadata',5000);
+    }
+    if(token!==miracleSequenceToken)return false;
+
+    const duration=Number.isFinite(miracleVideo.duration)&&miracleVideo.duration>0
+      ? miracleVideo.duration
+      : video.duration;
+    if(!Number.isFinite(duration)||duration<=0)return false;
+
+    const target=Math.max(0,Math.min(duration-.04,Number(targetTime)||0));
+    const end=Math.min(duration-.04,target+MIRACLE_REPLAY_LEAD_SECONDS);
+    const span=end-target;
+    if(span<.45)return false;
+
+    miracleVideo.style.display='block';
+    miracleStill.style.display='none';
+    miracleVideo.muted=true;
+    miracleReplayLabel.textContent='↶ REVERSE SLOW REPLAY';
+    miracleKicker.textContent='奇跡の瞬間へ';
+    miracleSub.textContent='逆再生で近づいています';
+
+    const steps=Math.max(8,Math.min(14,Math.ceil(span/.18)));
+    for(let n=0;n<=steps;n++){
+      if(token!==miracleSequenceToken)return false;
+      const p=n/steps;
+      const t=end-(span*p);
+      miracleVideo.currentTime=Math.max(0,t);
+      try{await waitForVideoEvent(miracleVideo,'seeked',1400);}catch(e){}
+      if(token!==miracleSequenceToken)return false;
+      await sleep(150);
+    }
+    miracleVideo.pause();
+    miracleVideo.currentTime=target;
+    try{await waitForVideoEvent(miracleVideo,'seeked',1200);}catch(e){}
+    return token===miracleSequenceToken;
+  }catch(err){
+    console.warn('reverse miracle replay failed',err);
+    try{miracleVideo.pause();}catch(e){}
+    return false;
+  }
+}
 async function replayOriginalMoment(targetTime,token){
   if(!replaySourceAvailable())return false;
   const src=replaySourceUrl();
-  miracleReplayLabel.textContent='0.5× SLOW REPLAY';
+  const target=Math.max(0,Number(targetTime)||0);
+
+  // Near the beginning there is not enough footage before the selected frame.
+  // In that case, approach it from later footage in reverse.
+  if(target<1.4){
+    if(await replayReverseTowardTarget(src,target,token))return true;
+    if(token!==miracleSequenceToken)return false;
+  }
+
+  miracleReplayLabel.textContent='0.45× SLOW REPLAY';
   miracleVideo.style.display='block';
   miracleStill.style.display='none';
   miracleVideo.muted=true;
@@ -310,7 +371,7 @@ async function replayOriginalMoment(targetTime,token){
   if(await attemptReplay(src,targetTime,token,false))return true;
   if(token!==miracleSequenceToken)return false;
 
-  miracleReplayLabel.textContent='0.5× SLOW REPLAY · RETRY';
+  miracleReplayLabel.textContent='0.45× SLOW REPLAY · RETRY';
   await sleep(120);
   if(token!==miracleSequenceToken)return false;
   return await attemptReplay(src,targetTime,token,true);
@@ -325,18 +386,31 @@ async function replayExtractedFrames(targetTime,token){
     .sort((a,b)=>a.t-b.t);
   const at=order.reduce((best,x,idx)=>
     Math.abs(x.t-target)<Math.abs(order[best].t-target)?idx:best,0);
-  const from=Math.max(0,at-4);
-  let seq=order.slice(from,at+1);
+
+  let seq;
+  const reverseApproach=target<1.4;
+  if(reverseApproach){
+    seq=order.slice(at,Math.min(order.length,at+6)).reverse();
+    miracleReplayLabel.textContent='↶ REVERSE REPLAY';
+    miracleSub.textContent='逆向きフレームリプレイ';
+  }else{
+    const from=Math.max(0,at-4);
+    seq=order.slice(from,at+1);
+  }
   if(seq.length<2&&order.length>1){
-    seq=order.slice(Math.max(0,at-1),Math.min(order.length,at+1));
+    seq=reverseApproach
+      ? order.slice(at,Math.min(order.length,at+2)).reverse()
+      : order.slice(Math.max(0,at-1),Math.min(order.length,at+1));
   }
   if(!seq.length)return false;
 
   miracleVideo.style.display='none';
   miracleStill.style.display='block';
-  miracleReplayLabel.textContent='SLOW REPLAY';
+  if(target>=1.4){
+    miracleReplayLabel.textContent='SLOW REPLAY';
+    miracleSub.textContent='スローリプレイ';
+  }
   miracleKicker.textContent='奇跡の瞬間へ';
-  miracleSub.textContent='スローリプレイ';
 
   // Always keep the fallback visibly on screen long enough to read as replay.
   const hold=Math.max(500,Math.min(800,2600/seq.length));
