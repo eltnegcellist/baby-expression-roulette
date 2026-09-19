@@ -374,3 +374,57 @@ body.labGifViewerOpen{overflow:hidden}
 .labDiagPanel>summary{cursor:pointer;font-size:12px;font-weight:900;color:#4a5365;list-style-position:inside}
 .labDiagPanel>summary span{display:inline-block;margin-right:7px;padding:3px 7px;border-radius:999px;background:#eef1f7;font-size:9px;letter-spacing:.08em}
 .labDiagPanel[open]>summary{margin-bottom:10px}
+
+
+/* LAB 16: premium miracle fortune UX */
+#labSpecialEmblem{display:none;margin:0 auto 8px;width:max-content;max-width:100%;padding:5px 10px;border-radius:999px;font-size:9px;font-weight:1000;letter-spacing:.12em}
+#resultCard.labSpecialMiracle,
+#labResultDock #resultCard.labDocked.labSpecialMiracle{
+  border:1px solid #f1cd58!important;
+  background:
+    radial-gradient(circle at 50% -20%,#fffbe7 0,#fff4b8 34%,transparent 63%),
+    linear-gradient(145deg,#fffdf5,#fff1b7 52%,#ffd978)!important;
+  box-shadow:0 10px 30px #a76b162e,0 0 0 2px #fff6c7 inset,0 0 30px #ffd85b45!important
+}
+#resultCard.labSpecialMiracle #labSpecialEmblem{background:#8a5b00;color:#fff8cf;box-shadow:0 3px 12px #8a5b0033}
+#resultCard.labSpecialMiracle #resultHead{color:#8c6410!important;font-weight:950!important;letter-spacing:.08em}
+#resultCard.labSpecialMiracle #resultText{
+  color:#9a5b00!important;
+  text-shadow:0 1px 0 #fff8c8,0 3px 12px #ffcf4a77!important;
+  font-size:clamp(38px,11vw,58px)!important
+}
+#resultCard.labSpecialReversal,
+#labResultDock #resultCard.labDocked.labSpecialReversal{
+  border:1px solid #c5a7eb!important;
+  background:
+    radial-gradient(circle at 8% 10%,#ffd8f0aa 0,transparent 34%),
+    radial-gradient(circle at 92% 14%,#b8f2ffaa 0,transparent 36%),
+    linear-gradient(145deg,#fffafd,#eef1ff 48%,#fff3bd)!important;
+  box-shadow:0 10px 30px #70499524,0 0 0 2px #ffffffcc inset,0 0 34px #c17cff36!important
+}
+#resultCard.labSpecialReversal #labSpecialEmblem{background:linear-gradient(110deg,#8654aa,#497bc2,#be7379);color:#fff;box-shadow:0 3px 13px #70499544}
+#resultCard.labSpecialReversal #resultHead{color:#745486!important;font-weight:950!important;letter-spacing:.04em}
+#resultCard.labSpecialReversal #resultText{
+  background:linear-gradient(100deg,#8b49a7,#447ec4,#bf6a83,#a47917);
+  -webkit-background-clip:text;background-clip:text;color:transparent!important;
+  text-shadow:none!important;
+  font-size:clamp(31px,9vw,48px)!important;line-height:1.05!important
+}
+#labMiracleMediaActions{display:none;gap:7px;margin-top:9px;flex-wrap:wrap}
+#labMiracleMediaActions button{
+  flex:1;min-width:125px;padding:9px 10px;border-radius:999px;
+  font-size:10px;font-weight:950;box-shadow:none
+}
+#labDownloadMiracle{background:#fff;color:#765414;border:1px solid #e9cc77}
+#labShareMiracle{background:#624277;color:#fff;border:1px solid #8f70a2}
+#labMiracleMediaStatus{min-height:0;margin-top:5px;text-align:center;font-size:9px;font-weight:850}
+#labMiracleMediaStatus.state-success{color:#36734b}
+#labMiracleMediaStatus.state-error{color:#a34b3c}
+#labMiracleShare{background:rgba(255,255,255,.22)!important}
+#labMiracleOverlay.final-photo.reversal-mode .labMiracleTitle{font-size:clamp(38px,11vw,74px)!important;line-height:1!important}
+#labMiracleOverlay.final-photo.miracle-mode .labMiracleTitle{color:#fff7bd;text-shadow:0 3px 10px #0009,0 0 28px #ffd750!important}
+@media(max-width:520px){
+  #labMiracleOverlay .labMiracleActions{width:min(96vw,540px);gap:6px}
+  #labMiracleOverlay .labMiracleActions button{font-size:10px;padding:10px 7px}
+  #labMiracleMediaActions button{min-width:110px}
+}
