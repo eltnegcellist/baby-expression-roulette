@@ -327,3 +327,36 @@ body.labMiracleOpen{overflow:hidden}
 #labMiracleOverlay .labMiracleReplayWrap{
   pointer-events:none;
 }
+
+
+/* LAB 6.4: in-app GIF viewer (browser-independent) */
+body.labGifViewerOpen{overflow:hidden}
+#labGifViewer{
+  position:fixed;inset:0;z-index:40000;display:none;
+  align-items:center;justify-content:center;
+  padding:max(18px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom));
+  background:rgba(8,7,10,.94);
+  backdrop-filter:blur(12px)
+}
+#labGifViewer.show{display:flex}
+#labGifViewerClose{
+  position:absolute;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));
+  width:44px;height:44px;border-radius:999px;border:1px solid #ffffff66;
+  background:rgba(0,0,0,.55);color:#fff;font-size:28px;line-height:1;z-index:3
+}
+.labGifViewerInner{
+  width:min(94vw,560px);max-height:94dvh;
+  display:flex;flex-direction:column;align-items:center;gap:10px
+}
+.labGifViewerTitle{color:#fff;font-size:17px;font-weight:950}
+#labGifViewerImage{
+  display:block;max-width:100%;max-height:76dvh;
+  object-fit:contain;border-radius:16px;background:#000;
+  box-shadow:0 12px 38px #0008
+}
+.labGifViewerNote{color:#ffffffbb;font-size:11px}
+#labGifViewerDone{
+  margin-top:2px;padding:10px 18px;border-radius:999px;
+  border:1px solid #ffffff70;background:rgba(255,255,255,.12);
+  color:#fff;font-weight:900;font-size:12px
+}
