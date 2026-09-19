@@ -93,8 +93,10 @@ let currentMiracleReplay=null;
 let miracleAutoCloseTimer=null;
 let replaySourceKey=null;
 let replayWarmupGeneration=0;
+let miraclePhotoFile=null;
+let miraclePhotoKind=null;
 
-const LAB_VERSION='LAB 15';
+const LAB_VERSION='LAB 16';
 const replayDiagnostics=[];
 let lastReplayPlan=null;
 
@@ -147,10 +149,15 @@ function runReplayRegressionTests(){
       })()
     },
     {
+      name:'奇跡UXラベル',
+      pass:miracleShareText('miracle').includes('特大吉')&&miracleShareText('reversal').includes('大逆転大吉')
+    },
+    {
       name:'必須関数が定義済み',
       pass:[
         replayPlan,executeReplayPlan,runForwardSourceReplay,runReverseSourceReplay,
-        specialFortuneDisplay,applySpecialFortuneDisplay
+        specialFortuneDisplay,applySpecialFortuneDisplay,prepareMiraclePhotoFile,
+        savePreparedMiraclePhoto,sharePreparedMiraclePhoto
       ].every(x=>typeof x==='function')
     }
   ];
@@ -184,7 +191,8 @@ miracleOverlay.innerHTML=
     '<div class="labMiracleSub"></div>'+
   '</div>'+
   '<div class="labMiracleActions">'+
-    '<button id="labReplayAgain" type="button">↻ もう一度リプレイ</button>'+
+    '<button id="labReplayAgain" type="button">↻ リプレイ</button>'+
+    '<button id="labMiracleShare" type="button">↗ 共有</button>'+
     '<button id="labMiracleBack" type="button">結果へ戻る</button>'+
   '</div>'+
   '<div class="labMiracleSparkles"></div>';
@@ -199,21 +207,34 @@ const miracleStill=miracleOverlay.querySelector('#labMiracleStill');
 const miracleBackdropImage=miracleOverlay.querySelector('#labMiracleBackdropImage');
 const miracleReplayLabel=miracleOverlay.querySelector('#labMiracleReplayLabel');
 const miracleReplayAgain=miracleOverlay.querySelector('#labReplayAgain');
+const miracleShare=miracleOverlay.querySelector('#labMiracleShare');
 const miracleBack=miracleOverlay.querySelector('#labMiracleBack');
 
 const extra=document.createElement('div');
 extra.id='labFortuneExtra';
 extra.innerHTML=
+  '<div id="labSpecialEmblem"></div>'+
   '<div id="labLucky"></div>'+
   '<div id="labSpecialLine"></div>'+
   '<button id="labReplaySpecial" type="button">✨ 奇跡のリプレイ</button>'+
+  '<div id="labMiracleMediaActions">'+
+    '<button id="labDownloadMiracle" type="button">↓ 写真を端末に保存</button>'+
+    '<button id="labShareMiracle" type="button">↗ 写真を共有</button>'+
+  '</div>'+
+  '<div id="labMiracleMediaStatus" aria-live="polite"></div>'+
   '<button id="labSavePhoto" type="button">♡ 今日の一枚に保存</button>';
 resultCardEl.appendChild(extra);
+const specialEmblem=extra.querySelector('#labSpecialEmblem');
 const luckyEl=extra.querySelector('#labLucky');
 const specialLine=extra.querySelector('#labSpecialLine');
 const replaySpecialBtn=extra.querySelector('#labReplaySpecial');
+const miracleMediaActions=extra.querySelector('#labMiracleMediaActions');
+const downloadMiracleBtn=extra.querySelector('#labDownloadMiracle');
+const shareMiracleBtn=extra.querySelector('#labShareMiracle');
+const miracleMediaStatus=extra.querySelector('#labMiracleMediaStatus');
 const saveBtn=extra.querySelector('#labSavePhoto');
 replaySpecialBtn.style.display='none';
+miracleMediaActions.style.display='none';
 
 function randomOf(arr){return arr[Math.floor(Math.random()*arr.length)];}
 function pickLucky(){return {color:randomOf(LUCKY_COLORS),point:randomOf(LUCKY_POINTS)};}
@@ -231,6 +252,110 @@ function specialFor(fortune){
   if(fortune==='大凶'&&Math.random()<daikyoRate)return 'reversal';
   return null;
 }
+function miracleFilename(kind,type='image/jpeg'){
+  const ext=type.includes('png')?'png':'jpg';
+  const label=kind==='reversal'?'daigyakuten-daikichi':'tokudaikichi';
+  return 'baby-'+label+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+ext;
+}
+function fileFromDataUrl(dataUrl,kind){
+  if(typeof dataUrl!=='string'||!dataUrl.startsWith('data:'))return null;
+  const comma=dataUrl.indexOf(',');
+  if(comma<0)return null;
+  const meta=dataUrl.slice(5,comma);
+  const type=(meta.split(';')[0]||'image/jpeg');
+  const base64=/;base64/i.test(meta);
+  const raw=base64?atob(dataUrl.slice(comma+1)):decodeURIComponent(dataUrl.slice(comma+1));
+  const bytes=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+  return new File([bytes],miracleFilename(kind,type),{type,lastModified:Date.now()});
+}
+async function prepareMiraclePhotoFile(src,kind){
+  miraclePhotoFile=null;
+  miraclePhotoKind=kind||null;
+  try{
+    const direct=fileFromDataUrl(src,kind);
+    if(direct){
+      miraclePhotoFile=direct;
+      return direct;
+    }
+    const response=await fetch(src);
+    const blob=await response.blob();
+    miraclePhotoFile=new File([blob],miracleFilename(kind,blob.type||'image/jpeg'),{
+      type:blob.type||'image/jpeg',lastModified:Date.now()
+    });
+    return miraclePhotoFile;
+  }catch(err){
+    diag('miracle-file-error',{name:err?.name||'Error',message:String(err?.message||err)});
+    return null;
+  }
+}
+function miracleShareText(kind){
+  return kind==='reversal'
+    ? '大凶かと思ったら…大逆転大吉！ 奇跡の一枚 🌈'
+    : '特大吉！ 奇跡の一枚 ✨';
+}
+function setMiracleMediaStatus(text,state=''){
+  if(!miracleMediaStatus)return;
+  miracleMediaStatus.textContent=text||'';
+  miracleMediaStatus.className=state?('state-'+state):'';
+}
+function savePreparedMiraclePhoto(){
+  if(!miraclePhotoFile){
+    setMiracleMediaStatus('写真を準備できませんでした','error');
+    return false;
+  }
+  const url=URL.createObjectURL(miraclePhotoFile);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=miraclePhotoFile.name;
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  setMiracleMediaStatus('端末への保存を開始しました','success');
+  return true;
+}
+async function sharePreparedMiraclePhoto(){
+  if(!miraclePhotoFile){
+    setMiracleMediaStatus('写真を準備できませんでした','error');
+    return false;
+  }
+  const payload={
+    files:[miraclePhotoFile],
+    title:'赤ちゃん表情おみくじ',
+    text:miracleShareText(miraclePhotoKind)
+  };
+  try{
+    if(navigator.share&&(!navigator.canShare||navigator.canShare({files:payload.files}))){
+      await navigator.share(payload);
+      setMiracleMediaStatus('共有しました','success');
+      return true;
+    }
+    savePreparedMiraclePhoto();
+    setMiracleMediaStatus('共有機能がないため写真を保存しました','success');
+    return false;
+  }catch(err){
+    if(err?.name==='AbortError')return false;
+    diag('miracle-share-error',{name:err?.name||'Error',message:String(err?.message||err)});
+    setMiracleMediaStatus('共有できませんでした','error');
+    return false;
+  }
+}
+function setSpecialResultStyle(special){
+  resultCardEl.classList.toggle('labSpecialMiracle',special==='miracle');
+  resultCardEl.classList.toggle('labSpecialReversal',special==='reversal');
+  if(specialEmblem){
+    specialEmblem.style.display=special?'block':'none';
+    specialEmblem.textContent=special==='miracle'
+      ? '✦ MIRACLE FORTUNE ✦'
+      : special==='reversal'
+        ? '🌈 REVERSAL FORTUNE 🌈'
+        : '';
+  }
+  miracleMediaActions.style.display=special?'flex':'none';
+  if(!special)setMiracleMediaStatus('');
+}
 function specialFortuneDisplay(special,baseFortune){
   if(special==='miracle')return {head:'きょうの運勢',fortune:'特大吉',badge:'✨ 特大吉'};
   if(special==='reversal')return {head:'大凶かと思ったら…',fortune:'大逆転大吉',badge:'🌈 大逆転大吉'};
@@ -238,6 +363,7 @@ function specialFortuneDisplay(special,baseFortune){
 }
 function applySpecialFortuneDisplay(special,baseFortune){
   const d=specialFortuneDisplay(special,baseFortune);
+  setSpecialResultStyle(special);
   if(resultHeadEl)resultHeadEl.textContent=d.head;
   resultTextEl.textContent=d.fortune;
   resultTextEl.style.color=FORTUNE_COLORS[baseFortune==='大凶'?'大吉':baseFortune]||'#700';
@@ -721,6 +847,7 @@ async function executeReplayPlan(targetTime,token,frameSrc){
 
 function showFinalMiraclePhoto(kind,frameSrc){
   diag('final-photo',{kind,route:lastReplayPlan?.route||null,targetTime:lastReplayPlan?.targetTime??null});
+  if(!miraclePhotoFile||miraclePhotoKind!==kind)prepareMiraclePhotoFile(frameSrc,kind);
   try{miracleVideo.pause();}catch(e){}
   clearTimeout(miracleAutoCloseTimer);
   miracleVideo.style.display='none';
@@ -731,15 +858,15 @@ function showFinalMiraclePhoto(kind,frameSrc){
   fillMiracleSparkles();
 
   if(kind==='reversal'){
-    miracleKicker.textContent='運勢、ひっくり返りました';
-    miracleTitle.textContent='大逆転！';
+    miracleKicker.textContent='大凶かと思ったら…';
+    miracleTitle.textContent='大逆転大吉！';
     miracleSub.textContent='🌈 奇跡の一枚 🌈';
     playSpecialSound('reversal');
     if(navigator.vibrate)navigator.vibrate([120,40,120,40,220,60,320]);
   }else{
     miracleKicker.textContent='大吉の、その先へ';
-    miracleTitle.textContent='奇跡の一枚！';
-    miracleSub.textContent='✨ MIRACLE PHOTO ✨';
+    miracleTitle.textContent='特大吉！';
+    miracleSub.textContent='✨ 奇跡の一枚 ✨';
     playSpecialSound('miracle');
     if(navigator.vibrate)navigator.vibrate([90,45,120,55,180,60,260]);
   }
@@ -818,6 +945,9 @@ function clearSpecial(){
 function clearLab(){
   clearSpecial();
   undockResult();
+  setSpecialResultStyle(null);
+  miraclePhotoFile=null;
+  miraclePhotoKind=null;
   extra.style.display='none';
   specialLine.style.display='none';
   currentLab=null;
@@ -867,6 +997,24 @@ async function replayMiracleImmediately(){
 
   showFinalMiraclePhoto(replay.kind,replay.frameSrc);
 }
+
+miracleShare.addEventListener('click',async e=>{
+  e.preventDefault();
+  e.stopPropagation();
+  clearTimeout(miracleAutoCloseTimer);
+  miracleAutoCloseTimer=null;
+  await sharePreparedMiraclePhoto();
+});
+downloadMiracleBtn.addEventListener('click',e=>{
+  e.preventDefault();
+  e.stopPropagation();
+  savePreparedMiraclePhoto();
+});
+shareMiracleBtn.addEventListener('click',async e=>{
+  e.preventDefault();
+  e.stopPropagation();
+  await sharePreparedMiraclePhoto();
+});
 
 miracleReplayAgain.addEventListener('pointerdown',e=>{
   e.preventDefault();
@@ -955,6 +1103,7 @@ function showHistoryEntry(x){
   replaySpecialBtn.style.display='none';
   if(x.special){
     currentMiracleReplay={kind:x.special,frameSrc:x.image,targetTime:x.targetTime??x.time,index:x.index};
+    prepareMiraclePhotoFile(x.image,x.special);
     replaySpecialBtn.style.display='block';
     specialLine.textContent=x.special==='reversal'?'🌈 大逆転！奇跡の一枚':'✨ 奇跡の一枚';
     specialLine.className=x.special==='reversal'?'reversal':'miracle';
@@ -991,6 +1140,7 @@ function showLabResult(){
   const targetTime=Number(activeCreation?.times?.[currentIndex]);
 
   if(resultHeadEl)resultHeadEl.textContent='きょうの運勢';
+  setSpecialResultStyle(null);
   currentLab={fortune,lucky,special,displayFortune:fortune};
   if(special){
     const display=applySpecialFortuneDisplay(special,fortune);
@@ -1011,6 +1161,7 @@ function showLabResult(){
       targetTime:Number.isFinite(targetTime)?targetTime:currentIndex,
       index:currentIndex
     };
+    prepareMiraclePhotoFile(currentMiracleReplay.frameSrc,special);
     replaySpecialBtn.style.display='block';
   }
 
