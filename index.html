@@ -9,8 +9,9 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon.svg">
 <title>赤ちゃん表情おみくじ</title>
-<link rel="stylesheet" href="./style.css?v=15">
-<link rel="stylesheet" href="./deluxe.css?v=15">
+<link rel="stylesheet" href="./style.css?v=16">
+<link rel="stylesheet" href="./deluxe.css?v=16">
+<link rel="stylesheet" href="./features.css?v=16">
 <style>
 body:not(.show-score-details) .scoreChip,
 body:not(.show-score-details) .scoreDetails,
@@ -23,10 +24,10 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <header class="hero">
   <div class="heroMark" aria-hidden="true">🎴</div>
   <div class="heroText">
-    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge">v15</span></div>
+    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge">v16</span></div>
     <h1>赤ちゃん表情おみくじ</h1>
     <p class="heroCatch">かわいい一瞬を、おみくじに。</p>
-    <p class="lead">動画を選ぶだけで、印象的な表情を自動で切り出して赤ちゃんおみくじを作ります。</p>
+    <p class="lead">動画から印象的な表情を切り出し、おみくじ・奇跡のリプレイ・履歴GIFとして楽しめます。</p>
   </div>
 </header>
 <section class="card">
@@ -35,6 +36,7 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
   <div class="filebox">
     <input id="fileInput" type="file" accept="video/*">
     <div class="note">動画を選ぶと自動で表情コマを抽出します。処理はブラウザ内だけで行い、元動画は外部へ送信しません。</div>
+    <div class="labMiracleHint">✨ ときどき、止まった一瞬が特別な「奇跡のリプレイ」に変わることも…？</div>
   </div>
   <div id="progressWrap"><div class="progress"><div id="progressBar"></div></div><div id="progressText">準備中...</div></div>
   <details class="opt">
@@ -64,11 +66,34 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
   <div class="playShell"><div id="stage"><img id="playImage" alt=""><div id="fortuneBadge"></div><div id="resultCard"><div id="resultHead">きょうの運勢</div><div id="resultText"></div><div id="message"></div></div><div id="rouletteBadge">タップでストップ</div></div></div>
   <div id="tapHint">画像をタップすると止まります</div><div class="row" style="justify-content:center;margin-top:12px"><button id="backBtn" class="secondary">戻る</button></div>
 </section>
+<section id="labHistorySection" class="card labHistoryCard">
+  <div class="step">HISTORY / GIF</div>
+  <h2>引いた写真の履歴</h2>
+  <p class="note">止まった写真を自動でためます。GIFを作るときは、引いた順ではなく元動画の時間順に並べ直します。</p>
+  <div id="labHistoryEmpty" class="note">まだ履歴はありません。</div>
+  <div id="labHistory"></div>
+  <div class="labGifActions">
+    <button id="labMakeGif" class="primary" type="button" disabled>履歴からGIFを作る</button>
+    <button id="labClearHistory" class="secondary" type="button" disabled>履歴をクリア</button>
+  </div>
+  <div id="labGifStatus" class="note" style="display:none"></div>
+  <div id="labGifResult" style="display:none">
+    <img id="labGifPreview" alt="履歴から作ったGIF">
+    <a id="labGifDownload" class="labDownload" download="baby-expression-history.gif">GIFを保存して見る</a>
+  </div>
+</section>
+<section id="labCollectionSection" class="card labCollectionCard">
+  <div class="step">COLLECTION</div>
+  <h2>今日の一枚コレクション</h2>
+  <p class="note">結果画面の「今日の一枚に保存」で残した写真です。写真はこの端末のブラウザ内だけに保存されます。</p>
+  <div id="labCollection"><div class="note">まだ保存されていません。</div></div>
+</section>
 <video id="video" playsinline muted preload="metadata" style="display:none"></video><canvas id="captureCanvas" style="display:none"></canvas><canvas id="smallCanvas" width="28" height="28" style="display:none"></canvas>
 </div>
 <div id="bigOverlay"><div id="bigText">大吉！</div></div>
-<script src="./app.js?v=15" defer></script>
-<script src="./deluxe.js?v=15" defer></script>
+<script src="./app.js?v=16" defer></script>
+<script src="./deluxe.js?v=16" defer></script>
+<script src="./features.js?v=16" defer></script>
 <script>
 (()=>{
   const scoreBox=document.getElementById('showScores');
