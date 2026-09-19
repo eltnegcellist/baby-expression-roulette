@@ -370,3 +370,7 @@ body.labGifViewerOpen{overflow:hidden}
 
 /* LAB 15: code-health pass; diagnostics are passive during normal use */
 .labDiagCard .note{line-height:1.55}
+
+.labDiagPanel>summary{cursor:pointer;font-size:12px;font-weight:900;color:#4a5365;list-style-position:inside}
+.labDiagPanel>summary span{display:inline-block;margin-right:7px;padding:3px 7px;border-radius:999px;background:#eef1f7;font-size:9px;letter-spacing:.08em}
+.labDiagPanel[open]>summary{margin-bottom:10px}
