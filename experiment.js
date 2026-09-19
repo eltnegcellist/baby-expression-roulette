@@ -18,6 +18,12 @@ const gifStatus=document.getElementById('labGifStatus');
 const gifResult=document.getElementById('labGifResult');
 const gifPreview=document.getElementById('labGifPreview');
 const gifDownload=document.getElementById('labGifDownload');
+const diagSummaryEl=document.getElementById('labDiagSummary');
+const diagRouteEl=document.getElementById('labDiagRoute');
+const diagLogEl=document.getElementById('labDiagLog');
+const diagCopyBtn=document.getElementById('labDiagCopy');
+const diagClearBtn=document.getElementById('labDiagClear');
+const diagRunTestsBtn=document.getElementById('labDiagRunTests');
 if(!stageEl||!resultCardEl||!collectionEl||!historyEl)return;
 
 const gifViewer=document.createElement('div');
@@ -85,6 +91,72 @@ let miracleSequenceToken=0;
 let currentMiracleReplay=null;
 let miracleAutoCloseTimer=null;
 let replaySourceKey=null;
+
+const LAB_VERSION='LAB 14';
+const replayDiagnostics=[];
+let lastReplayPlan=null;
+
+function safeReplayState(){
+  const activeKey=activeCreation?.sourceKey||null;
+  return {
+    version:LAB_VERSION,
+    targetTime:currentMiracleReplay?.targetTime??null,
+    sourceAvailable:replaySourceAvailable(),
+    hasObjectUrl:!!objectUrl,
+    hasLastFile:!!lastFile,
+    activeHasSourceKey:!!activeKey,
+    currentHasSourceKey:!!currentSourceKey,
+    sourceKeyMatches:!!(activeKey&&currentSourceKey&&activeKey===currentSourceKey),
+    replayKeyMatches:!!(activeKey&&replaySourceKey&&activeKey===replaySourceKey),
+    videoReadyState:miracleVideo?.readyState??null,
+    videoDuration:Number.isFinite(miracleVideo?.duration)?Number(miracleVideo.duration.toFixed(3)):null
+  };
+}
+function diag(event,data={}){
+  const row={t:new Date().toISOString(),event,...data};
+  replayDiagnostics.push(row);
+  if(replayDiagnostics.length>180)replayDiagnostics.shift();
+  if(diagRouteEl&&event==='plan'){
+    diagRouteEl.textContent='直近の経路: '+(data.route||'—')+(Number.isFinite(data.targetTime)?' / '+data.targetTime.toFixed(2)+'秒':'');
+  }
+  if(diagLogEl){
+    diagLogEl.textContent=replayDiagnostics.slice(-24).map(x=>JSON.stringify(x)).join('\n');
+  }
+}
+function replayPlan(targetTime,sourceAvailable){
+  const target=Math.max(0,Number(targetTime)||0);
+  const early=target<2.5;
+  if(early&&sourceAvailable)return {route:'reverse-source',early:true,targetTime:target};
+  if(!early&&sourceAvailable)return {route:'forward-source',early:false,targetTime:target};
+  if(early&&!sourceAvailable)return {route:'reverse-frames',early:true,targetTime:target};
+  return {route:'photo-only',early:false,targetTime:target};
+}
+function runReplayRegressionTests(){
+  const tests=[
+    {
+      name:'冒頭0.8秒→逆再生',
+      pass:replayPlan(.8,true).route==='reverse-source'
+    },
+    {
+      name:'中間12秒→元動画スロー',
+      pass:replayPlan(12,true).route==='forward-source'
+    },
+    {
+      name:'大凶→大逆転大吉',
+      pass:(()=>{
+        const d=specialFortuneDisplay('reversal','大凶');
+        return d.head==='大凶かと思ったら…'&&d.fortune==='大逆転大吉';
+      })()
+    }
+  ];
+  const passed=tests.filter(x=>x.pass).length;
+  if(diagSummaryEl){
+    diagSummaryEl.textContent='自己診断: '+passed+'/'+tests.length+' PASS';
+    diagSummaryEl.className=passed===tests.length?'labDiagPass':'labDiagFail';
+  }
+  diag('regression-tests',{passed,total:tests.length,tests});
+  return {passed,total:tests.length,tests};
+}
 
 const playShellEl=stageEl.closest('.playShell');
 const resultDock=document.createElement('div');
@@ -232,6 +304,14 @@ function primeMiracleReplaySource(x){
   }
   const canUse=!!(x&&key&&lastFile&&objectUrl&&currentSourceKey===key);
   replaySourceKey=canUse?key:null;
+  diag('prime-source',{
+    canUse,
+    creationHasKey:!!key,
+    currentHasKey:!!currentSourceKey,
+    keyMatches:!!(key&&currentSourceKey&&key===currentSourceKey),
+    hasObjectUrl:!!objectUrl,
+    hasLastFile:!!lastFile
+  });
   try{miracleVideo.pause();}catch(e){}
   if(!canUse){
     miracleVideo.removeAttribute('src');
@@ -279,6 +359,7 @@ function hideMiracleOverlay(clearReplay=false){
 }
 async function attemptReplay(src,targetTime,token,forceReload=false){
   if(token!==miracleSequenceToken)return false;
+  diag('forward-attempt-start',{targetTime:Number(targetTime)||0,forceReload,readyState:miracleVideo.readyState});
   try{
     miracleVideo.pause();
     if(forceReload||miracleVideo.src!==src){
@@ -309,6 +390,7 @@ async function attemptReplay(src,targetTime,token,forceReload=false){
     miracleVideo.playbackRate=replayRate;
     miracleReplayLabel.textContent=(Math.round(replayRate*100)/100)+'× SLOW REPLAY';
     await miracleVideo.play();
+    diag('forward-play-started',{target,start,replayRate,forceReload,readyState:miracleVideo.readyState});
 
     await new Promise(resolve=>{
       let raf=0;
@@ -328,8 +410,11 @@ async function attemptReplay(src,targetTime,token,forceReload=false){
       };
       tick();
     });
-    return token===miracleSequenceToken;
+    const ok=token===miracleSequenceToken;
+    diag('forward-attempt-end',{ok,targetTime:Number(targetTime)||0,forceReload,currentTime:Number(miracleVideo.currentTime.toFixed(3))});
+    return ok;
   }catch(err){
+    diag('forward-attempt-error',{targetTime:Number(targetTime)||0,forceReload,name:err?.name||'Error',message:String(err?.message||err)});
     console.warn('miracle replay attempt failed',err);
     try{miracleVideo.pause();}catch(e){}
     return false;
@@ -337,6 +422,7 @@ async function attemptReplay(src,targetTime,token,forceReload=false){
 }
 async function captureReverseReplayFrames(src,targetTime,token){
   if(token!==miracleSequenceToken)return null;
+  diag('reverse-capture-start',{targetTime:Number(targetTime)||0});
   try{
     miracleVideo.pause();
     if(miracleVideo.src!==src){
@@ -387,15 +473,21 @@ async function captureReverseReplayFrames(src,targetTime,token){
         frames.push(canvas.toDataURL('image/jpeg',.82));
       }catch(e){}
     }
-    return frames.length>=3?frames:null;
+    const result=frames.length>=3?frames:null;
+    diag('reverse-capture-end',{ok:!!result,frames:frames.length,targetTime:Number(targetTime)||0});
+    return result;
   }catch(err){
+    diag('reverse-capture-error',{targetTime:Number(targetTime)||0,name:err?.name||'Error',message:String(err?.message||err)});
     console.warn('reverse frame capture failed',err);
     return null;
   }
 }
 async function replayReverseTowardTarget(src,targetTime,token){
   const frames=await captureReverseReplayFrames(src,targetTime,token);
-  if(!frames||token!==miracleSequenceToken)return false;
+  if(!frames||token!==miracleSequenceToken){
+    diag('reverse-replay-end',{ok:false,targetTime:Number(targetTime)||0});
+    return false;
+  }
 
   miracleVideo.style.display='none';
   miracleStill.style.display='block';
@@ -412,20 +504,16 @@ async function replayReverseTowardTarget(src,targetTime,token){
     miracleBackdropImage.src=frame;
     await sleep(hold);
   }
-  return token===miracleSequenceToken;
+  const ok=token===miracleSequenceToken;
+  diag('reverse-replay-end',{ok,targetTime:Number(targetTime)||0,frames:frames.length});
+  return ok;
 }
-async function replayOriginalMoment(targetTime,token){
-  if(!replaySourceAvailable())return false;
-  const src=replaySourceUrl();
-  const target=Math.max(0,Number(targetTime)||0);
-
-  // Near the beginning there is not enough footage before the selected frame.
-  // In that case, approach it from later footage in reverse.
-  if(target<2.5){
-    if(await replayReverseTowardTarget(src,target,token))return true;
-    if(token!==miracleSequenceToken)return false;
+async function runForwardSourceReplay(targetTime,token){
+  if(!replaySourceAvailable()){
+    diag('forward-source-unavailable',{targetTime:Number(targetTime)||0,...safeReplayState()});
+    return false;
   }
-
+  const src=replaySourceUrl();
   miracleReplayLabel.textContent='0.42× SLOW REPLAY';
   miracleVideo.style.display='block';
   miracleStill.style.display='none';
@@ -446,6 +534,15 @@ async function replayOriginalMoment(targetTime,token){
   if(token!==miracleSequenceToken)return false;
   return await attemptReplay(src,targetTime,token,true);
 }
+
+async function runReverseSourceReplay(targetTime,token){
+  if(!replaySourceAvailable()){
+    diag('reverse-source-unavailable',{targetTime:Number(targetTime)||0,...safeReplayState()});
+    return false;
+  }
+  return await replayReverseTowardTarget(replaySourceUrl(),targetTime,token);
+}
+
 async function replayExtractedFrames(targetTime,token){
   const times=activeCreation?.times||[];
   const frames=activeCreation?.frames||[];
@@ -494,7 +591,46 @@ async function replayExtractedFrames(targetTime,token){
   }
   return token===miracleSequenceToken;
 }
+async function executeReplayPlan(targetTime,token,frameSrc){
+  const plan=replayPlan(targetTime,replaySourceAvailable());
+  lastReplayPlan=plan;
+  diag('plan',{...plan,sourceState:safeReplayState()});
+
+  let replayed=false;
+  if(plan.route==='reverse-source'){
+    replayed=await runReverseSourceReplay(targetTime,token);
+    if(!replayed&&token===miracleSequenceToken){
+      diag('fallback',{from:'reverse-source',to:'reverse-frames',targetTime:plan.targetTime});
+      replayed=await replayExtractedFrames(targetTime,token);
+    }
+  }else if(plan.route==='forward-source'){
+    replayed=await runForwardSourceReplay(targetTime,token);
+    if(!replayed&&token===miracleSequenceToken){
+      // Mid-video must never degrade into sparse slideshow.
+      diag('fallback',{from:'forward-source',to:'photo-only',targetTime:plan.targetTime});
+    }
+  }else if(plan.route==='reverse-frames'){
+    replayed=await replayExtractedFrames(targetTime,token);
+  }
+
+  if(token!==miracleSequenceToken)return {ok:false,plan};
+
+  if(!replayed){
+    miracleVideo.style.display='none';
+    miracleStill.style.display='block';
+    miracleStill.src=frameSrc;
+    miracleBackdropImage.src=frameSrc;
+    miracleReplayLabel.textContent='REPLAY unavailable';
+    miracleSub.textContent=plan.early?'逆再生を準備できませんでした':'元動画の連続スローを開始できませんでした';
+    await sleep(700);
+  }
+
+  diag('replay-finished',{ok:replayed,route:plan.route,targetTime:plan.targetTime});
+  return {ok:replayed,plan};
+}
+
 function showFinalMiraclePhoto(kind,frameSrc){
+  diag('final-photo',{kind,route:lastReplayPlan?.route||null,targetTime:lastReplayPlan?.targetTime??null});
   try{miracleVideo.pause();}catch(e){}
   clearTimeout(miracleAutoCloseTimer);
   miracleVideo.style.display='none';
@@ -561,26 +697,7 @@ async function playMiracleSequence(kind,replayAgain=false){
   miracleTitle.textContent='';
   miracleSub.textContent='0.5× SLOW REPLAY';
 
-  let replayed=await replayOriginalMoment(targetTime,token);
-  if(token!==miracleSequenceToken)return;
-
-  if(!replayed){
-    const early=(Number(targetTime)||0)<2.5;
-    if(early){
-      miracleReplayLabel.textContent='↶ REVERSE REPLAY';
-      miracleSub.textContent='逆向きフレームリプレイ';
-      replayed=await replayExtractedFrames(targetTime,token);
-    }else{
-      miracleVideo.style.display='none';
-      miracleStill.style.display='block';
-      miracleStill.src=frameSrc;
-      miracleBackdropImage.src=frameSrc;
-      miracleReplayLabel.textContent='SLOW REPLAY';
-      miracleSub.textContent='元動画を利用できないため写真へ移ります';
-      await sleep(700);
-    }
-  }
-  if(token!==miracleSequenceToken)return;
+  await executeReplayPlan(targetTime,token,frameSrc);
   if(token!==miracleSequenceToken)return;
 
   showFinalMiraclePhoto(kind,frameSrc);
@@ -655,26 +772,7 @@ async function replayMiracleImmediately(){
 
   try{miracleVideo.pause();}catch(e){}
 
-  let replayed=await replayOriginalMoment(replay.targetTime,token);
-  if(token!==miracleSequenceToken)return;
-
-  if(!replayed){
-    const early=(Number(replay.targetTime)||0)<2.5;
-    if(early){
-      miracleReplayLabel.textContent='↶ REVERSE REPLAY';
-      miracleSub.textContent='逆向きフレームリプレイ';
-      replayed=await replayExtractedFrames(replay.targetTime,token);
-    }else{
-      miracleVideo.style.display='none';
-      miracleStill.style.display='block';
-      miracleStill.src=replay.frameSrc;
-      miracleBackdropImage.src=replay.frameSrc;
-      miracleReplayLabel.textContent='SLOW REPLAY';
-      miracleSub.textContent='元動画を利用できないため写真へ移ります';
-      await sleep(700);
-    }
-  }
-  if(token!==miracleSequenceToken)return;
+  await executeReplayPlan(replay.targetTime,token,replay.frameSrc);
   if(token!==miracleSequenceToken)return;
 
   showFinalMiraclePhoto(replay.kind,replay.frameSrc);
@@ -1236,6 +1334,42 @@ async function renderCollection(){
   });
 }
 
+function diagnosticExport(){
+  return JSON.stringify({
+    version:LAB_VERSION,
+    generatedAt:new Date().toISOString(),
+    environment:{
+      userAgent:navigator.userAgent,
+      platform:navigator.platform||'',
+      visibility:document.visibilityState
+    },
+    current:safeReplayState(),
+    lastReplayPlan,
+    events:replayDiagnostics
+  },null,2);
+}
+diagCopyBtn?.addEventListener('click',async()=>{
+  const text=diagnosticExport();
+  try{
+    await navigator.clipboard.writeText(text);
+    diagCopyBtn.textContent='✓ コピーしました';
+    setTimeout(()=>diagCopyBtn.textContent='診断データをコピー',1400);
+  }catch(e){
+    if(diagLogEl)diagLogEl.textContent=text;
+    diagCopyBtn.textContent='下に表示しました';
+  }
+});
+diagClearBtn?.addEventListener('click',()=>{
+  replayDiagnostics.length=0;
+  lastReplayPlan=null;
+  if(diagLogEl)diagLogEl.textContent='まだ診断ログはありません。';
+  if(diagRouteEl)diagRouteEl.textContent='直近の経路: —';
+  diag('diagnostics-cleared');
+});
+diagRunTestsBtn?.addEventListener('click',runReplayRegressionTests);
+
 renderHistory();
 renderCollection().catch(console.error);
+runReplayRegressionTests();
+diag('lab-ready',safeReplayState());
 })();
