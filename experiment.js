@@ -51,8 +51,8 @@ const MIRACLE_DAIKICHI_RATE=.35;
 const MIRACLE_DAIKYO_RATE=.40;
 const MIRACLE_DAIKICHI_RATE_TEST=.50;
 const MIRACLE_DAIKYO_RATE_TEST=.55;
-const MIRACLE_REPLAY_LEAD_SECONDS=1.6;
-const MIRACLE_REPLAY_RATE=.50;
+const MIRACLE_REPLAY_LEAD_SECONDS=2.2;
+const MIRACLE_REPLAY_RATE=.45;
 
 const LUCKY_COLORS=[
   {name:'さくらピンク',hex:'#f4a7b9'},{name:'ミルクホワイト',hex:'#fffaf2'},
@@ -263,7 +263,7 @@ async function attemptReplay(src,targetTime,token,forceReload=false){
     const target=Math.max(0,Math.min(duration-.04,Number(targetTime)||0));
     const start=Math.max(0,target-MIRACLE_REPLAY_LEAD_SECONDS);
     const availableLead=Math.max(.04,target-start);
-    const replayRate=availableLead<.9?Math.max(.18,availableLead/2.0):MIRACLE_REPLAY_RATE;
+    const replayRate=availableLead<.9?Math.max(.18,availableLead/2.4):MIRACLE_REPLAY_RATE;
     miracleVideo.currentTime=start;
     try{await waitForVideoEvent(miracleVideo,'seeked',3000);}catch(e){}
     if(token!==miracleSequenceToken)return false;
@@ -339,7 +339,7 @@ async function replayExtractedFrames(targetTime,token){
   miracleSub.textContent='スローリプレイ';
 
   // Always keep the fallback visibly on screen long enough to read as replay.
-  const hold=Math.max(360,Math.min(650,1800/seq.length));
+  const hold=Math.max(500,Math.min(800,2600/seq.length));
   for(const x of seq){
     if(token!==miracleSequenceToken)return false;
     const src=frames[x.i];
