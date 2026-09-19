@@ -349,17 +349,3 @@ body.labGifViewerOpen{overflow:hidden}
 }
 
 
-/* Hotfix: keep the miracle close button pinned to the top-right */
-#labMiracleClose{
-  position:absolute!important;
-  right:max(12px,env(safe-area-inset-right))!important;
-  top:max(12px,env(safe-area-inset-top))!important;
-  left:auto!important;
-  bottom:auto!important;
-  transform:none!important;
-  flex:none!important;
-  z-index:60!important;
-}
-
-/* v17: miracle/reversal animation has no close button */
-#labMiracleClose{display:none!important}
