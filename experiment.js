@@ -182,6 +182,23 @@ function fillMiracleSparkles(){
   }
 }
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function waitForPresentedFrame(el,timeout=450){
+  return new Promise(resolve=>{
+    let done=false;
+    const finish=()=>{
+      if(done)return;
+      done=true;
+      clearTimeout(to);
+      resolve();
+    };
+    const to=setTimeout(finish,timeout);
+    if(typeof el.requestVideoFrameCallback==='function'){
+      try{el.requestVideoFrameCallback(()=>finish());}catch(e){finish();}
+    }else{
+      requestAnimationFrame(()=>requestAnimationFrame(finish));
+    }
+  });
+}
 function waitForVideoEvent(el,name,timeout=4000){
   return new Promise((resolve,reject)=>{
     let done=false;
@@ -355,6 +372,7 @@ async function captureReverseReplayFrames(src,targetTime,token){
       const t=target+span*p;
       miracleVideo.currentTime=t;
       try{await waitForVideoEvent(miracleVideo,'seeked',1800);}catch(e){}
+      await waitForPresentedFrame(miracleVideo,500);
       if(token!==miracleSequenceToken)return null;
       try{
         c.drawImage(miracleVideo,0,0,canvas.width,canvas.height);
