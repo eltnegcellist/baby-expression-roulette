@@ -193,14 +193,6 @@
   font-size:10px;font-weight:950;letter-spacing:.14em;color:#fff;
   backdrop-filter:blur(7px)
 }
-#labMiracleClose{
-  position:absolute;z-index:20;
-  right:max(12px,env(safe-area-inset-right));
-  top:max(12px,env(safe-area-inset-top));
-  width:44px;height:44px;border-radius:999px;
-  background:rgba(0,0,0,.48);color:#fff;border:1px solid #ffffff66;
-  font-size:29px;line-height:1;backdrop-filter:blur(7px)
-}
 #labMiracleOverlay .labMiracleCenter{
   position:absolute;z-index:8;left:50%;top:50%;
   transform:translate(-50%,-50%);
@@ -303,14 +295,13 @@ body.labMiracleOpen{overflow:hidden}
   animation:none!important;
   filter:none!important;
 }
-#labMiracleOverlay.final-photo .labMiracleActions,
-#labMiracleOverlay.final-photo #labMiracleClose{
+#labMiracleOverlay.final-photo .labMiracleActions{
   pointer-events:auto
 }
 
 
 
-#labReplayAgain,#labMiracleBack,#labMiracleClose,#labReplaySpecial{
+#labReplayAgain,#labMiracleBack,#labReplaySpecial{
   position:relative;
   z-index:50;
   touch-action:manipulation;
