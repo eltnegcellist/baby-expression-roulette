@@ -311,3 +311,19 @@ body.labMiracleOpen{overflow:hidden}
 #labMiracleOverlay.final-photo #labMiracleClose{
   pointer-events:auto
 }
+
+
+/* LAB 6.3: replay buttons must stay above all visual FX and react immediately */
+#labReplayAgain,#labMiracleBack,#labMiracleClose,#labReplaySpecial{
+  position:relative;
+  z-index:50;
+  touch-action:manipulation;
+  pointer-events:auto!important;
+  -webkit-tap-highlight-color:transparent;
+}
+#labMiracleOverlay .labMiracleSparkles,
+#labMiracleOverlay .labMiracleHalo,
+#labMiracleOverlay .labMiracleBackdrop,
+#labMiracleOverlay .labMiracleReplayWrap{
+  pointer-events:none;
+}
