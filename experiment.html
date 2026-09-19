@@ -11,7 +11,7 @@
 <title>赤ちゃん表情おみくじ LAB</title>
 <link rel="stylesheet" href="./style.css?v=15">
 <link rel="stylesheet" href="./deluxe.css?v=15">
-<link rel="stylesheet" href="./experiment.css?v=150">
+<link rel="stylesheet" href="./experiment.css?v=151">
 <style>
 body:not(.show-score-details) .scoreChip,
 body:not(.show-score-details) .scoreDetails,
@@ -27,7 +27,7 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
     <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge labBadge">LAB 15</span></div>
     <h1>赤ちゃん表情おみくじ</h1>
     <p class="heroCatch">かわいい一瞬を、おみくじに。 <span class="labInline">実験版</span></p>
-    <p class="lead">v15を土台に、新しい遊び方を試す実験版です。元のv15は別URLでそのまま残しています。</p>
+    <p class="lead">安定版を保ったまま、新しい処理を検証する実験版です。通常はそのまま遊べます。</p>
   </div>
 </header>
 <div class="labNotice">🧪 実験中：奇跡のスローリプレイ・フル画面写真・履歴GIFを試せます</div>
@@ -85,21 +85,22 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
   </div>
 </section>
 <section id="labDiagnosticsSection" class="card labDiagCard">
-  <div class="step">LAB DIAGNOSTICS</div>
-  <h2>リプレイ診断</h2>
-  <p class="note">再生経路・シーク・停止・失敗理由を自動記録します。動画そのものや写真はログに含めません。通常利用では操作不要です。</p>
-  <div class="labDiagStatus">
-    <div id="labDiagSummary">自己診断: 実行中…</div>
-    <div id="labDiagRoute">直近の経路: —</div>
-  </div>
-  <div class="labDiagActions">
-    <button id="labDiagRunTests" class="secondary" type="button">自己診断を再実行</button>
-    <button id="labDiagCopy" class="primary" type="button">診断データをコピー</button>
-    <button id="labDiagClear" class="secondary" type="button">ログをクリア</button>
-  </div>
-  <details class="labDiagDetails">
-    <summary>診断ログを見る</summary>
-    <pre id="labDiagLog">まだ診断ログはありません。</pre>
+  <details class="labDiagPanel">
+    <summary><span>LAB DIAGNOSTICS</span> リプレイ診断（通常は開かなくてOK）</summary>
+    <p class="note">再生経路・シーク・停止・失敗理由を自動記録します。動画そのものや写真はログに含めません。通常利用では操作不要です。</p>
+    <div class="labDiagStatus">
+      <div id="labDiagSummary">自己診断: 実行中…</div>
+      <div id="labDiagRoute">直近の経路: —</div>
+    </div>
+    <div class="labDiagActions">
+      <button id="labDiagRunTests" class="secondary" type="button">自己診断を再実行</button>
+      <button id="labDiagCopy" class="primary" type="button">診断データをコピー</button>
+      <button id="labDiagClear" class="secondary" type="button">ログをクリア</button>
+    </div>
+    <details class="labDiagDetails">
+      <summary>診断ログを見る</summary>
+      <pre id="labDiagLog">まだ診断ログはありません。</pre>
+    </details>
   </details>
 </section>
 <section id="labCollectionSection" class="card labCollectionCard">
