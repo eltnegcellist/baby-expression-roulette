@@ -376,3 +376,16 @@ body.labGifViewerOpen{overflow:hidden}
 
 /* LAB 7: miracle/reversal animation has no close button */
 #labMiracleClose{display:none!important}
+
+
+/* LAB 14: replay diagnostics */
+.labDiagCard{border-color:#cfd6e6}
+.labDiagStatus{display:grid;gap:7px;margin:10px 0}
+.labDiagStatus>div{padding:9px 11px;border-radius:12px;background:#f7f8fb;border:1px solid #e2e6ef;font-size:11px;font-weight:850;color:#4a5365}
+.labDiagPass{color:#25613a!important;background:#eefaf1!important;border-color:#ccebd4!important}
+.labDiagFail{color:#8a3d2b!important;background:#fff2ef!important;border-color:#f1d2ca!important}
+.labDiagActions{display:flex;gap:8px;flex-wrap:wrap}
+.labDiagActions button{flex:1;min-width:135px}
+.labDiagDetails{margin-top:10px}
+.labDiagDetails summary{font-size:11px;font-weight:850;cursor:pointer}
+#labDiagLog{margin:9px 0 0;padding:10px;border-radius:12px;background:#15171c;color:#e8ebf2;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:9px;line-height:1.45}
