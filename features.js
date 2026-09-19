@@ -217,7 +217,12 @@ function replaySourceAvailable(){
   return !!(src&&lastFile&&activeCreation?.times?.length&&key&&replaySourceKey===key&&currentSourceKey===key);
 }
 function primeMiracleReplaySource(x){
-  const key=x?.sourceKey||null;
+  let key=x?.sourceKey||null;
+  // Backward compatibility for a roulette created earlier in this same session.
+  if(!key&&x&&currentCreation&&x.id===currentCreation.id&&currentSourceKey){
+    key=currentSourceKey;
+    x.sourceKey=key;
+  }
   const canUse=!!(x&&key&&lastFile&&objectUrl&&currentSourceKey===key);
   replaySourceKey=canUse?key:null;
   try{miracleVideo.pause();}catch(e){}
