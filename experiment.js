@@ -262,12 +262,15 @@ async function attemptReplay(src,targetTime,token,forceReload=false){
 
     const target=Math.max(0,Math.min(duration-.04,Number(targetTime)||0));
     const start=Math.max(0,target-MIRACLE_REPLAY_LEAD_SECONDS);
+    const availableLead=Math.max(.04,target-start);
+    const replayRate=availableLead<.9?Math.max(.18,availableLead/2.0):MIRACLE_REPLAY_RATE;
     miracleVideo.currentTime=start;
     try{await waitForVideoEvent(miracleVideo,'seeked',3000);}catch(e){}
     if(token!==miracleSequenceToken)return false;
 
     miracleVideo.muted=true;
-    miracleVideo.playbackRate=MIRACLE_REPLAY_RATE;
+    miracleVideo.playbackRate=replayRate;
+    miracleReplayLabel.textContent=(Math.round(replayRate*100)/100)+'× SLOW REPLAY';
     await miracleVideo.play();
 
     await new Promise(resolve=>{
@@ -311,6 +314,41 @@ async function replayOriginalMoment(targetTime,token){
   await sleep(120);
   if(token!==miracleSequenceToken)return false;
   return await attemptReplay(src,targetTime,token,true);
+}
+async function replayExtractedFrames(targetTime,token){
+  const times=activeCreation?.times||[];
+  const frames=activeCreation?.frames||[];
+  if(!times.length||!frames.length)return false;
+
+  const target=Number(targetTime)||0;
+  let order=times.map((t,i)=>({t:Number(t)||0,i}))
+    .sort((a,b)=>a.t-b.t);
+  const at=order.reduce((best,x,idx)=>
+    Math.abs(x.t-target)<Math.abs(order[best].t-target)?idx:best,0);
+  const from=Math.max(0,at-4);
+  let seq=order.slice(from,at+1);
+  if(seq.length<2&&order.length>1){
+    seq=order.slice(Math.max(0,at-1),Math.min(order.length,at+1));
+  }
+  if(!seq.length)return false;
+
+  miracleVideo.style.display='none';
+  miracleStill.style.display='block';
+  miracleReplayLabel.textContent='SLOW REPLAY';
+  miracleKicker.textContent='奇跡の瞬間へ';
+  miracleSub.textContent='スローリプレイ';
+
+  // Always keep the fallback visibly on screen long enough to read as replay.
+  const hold=Math.max(360,Math.min(650,1800/seq.length));
+  for(const x of seq){
+    if(token!==miracleSequenceToken)return false;
+    const src=frames[x.i];
+    if(!src)continue;
+    miracleStill.src=src;
+    miracleBackdropImage.src=src;
+    await sleep(hold);
+  }
+  return token===miracleSequenceToken;
 }
 function showFinalMiraclePhoto(kind,frameSrc){
   try{miracleVideo.pause();}catch(e){}
@@ -379,14 +417,16 @@ async function playMiracleSequence(kind,replayAgain=false){
   miracleTitle.textContent='';
   miracleSub.textContent='0.5× SLOW REPLAY';
 
-  const replayed=await replayOriginalMoment(targetTime,token);
+  let replayed=await replayOriginalMoment(targetTime,token);
   if(token!==miracleSequenceToken)return;
 
   if(!replayed){
-    miracleReplayLabel.textContent='PHOTO REVEAL';
-    miracleSub.textContent='このセッションでは元動画リプレイを使えないため、写真演出へ';
-    await sleep(450);
+    miracleReplayLabel.textContent='SLOW REPLAY';
+    miracleSub.textContent='フレームリプレイ';
+    replayed=await replayExtractedFrames(targetTime,token);
   }
+  if(token!==miracleSequenceToken)return;
+  if(!replayed)await sleep(450);
   if(token!==miracleSequenceToken)return;
 
   showFinalMiraclePhoto(kind,frameSrc);
@@ -461,14 +501,16 @@ async function replayMiracleImmediately(){
 
   try{miracleVideo.pause();}catch(e){}
 
-  const replayed=await replayOriginalMoment(replay.targetTime,token);
+  let replayed=await replayOriginalMoment(replay.targetTime,token);
   if(token!==miracleSequenceToken)return;
 
   if(!replayed){
-    miracleReplayLabel.textContent='PHOTO REVEAL';
-    miracleSub.textContent='動画リプレイを開始できなかったため、写真演出へ';
-    await sleep(250);
+    miracleReplayLabel.textContent='SLOW REPLAY';
+    miracleSub.textContent='フレームリプレイ';
+    replayed=await replayExtractedFrames(replay.targetTime,token);
   }
+  if(token!==miracleSequenceToken)return;
+  if(!replayed)await sleep(250);
   if(token!==miracleSequenceToken)return;
 
   showFinalMiraclePhoto(replay.kind,replay.frameSrc);
@@ -669,8 +711,8 @@ preparePlay=function(x){
   history=[];
   renderHistory();
   clearGifResult();
-  primeMiracleReplaySource(x);
   previousPrepare(x);
+  primeMiracleReplaySource(x);
 };
 
 saveBtn.addEventListener('pointerdown',async e=>{
