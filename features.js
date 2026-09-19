@@ -91,7 +91,6 @@ miracleOverlay.id='labMiracleOverlay';
 miracleOverlay.innerHTML=
   '<div class="labMiracleBackdrop"><img id="labMiracleBackdropImage" alt=""></div>'+
   '<div class="labMiracleHalo"></div>'+
-  '<button id="labMiracleClose" type="button" aria-label="奇跡の一枚を閉じる">×</button>'+
   '<div class="labMiracleReplayWrap">'+
     '<div id="labMiracleReplayLabel">0.5× SLOW REPLAY</div>'+
     '<video id="labMiracleVideo" playsinline muted preload="metadata"></video>'+
@@ -118,7 +117,6 @@ const miracleStill=miracleOverlay.querySelector('#labMiracleStill');
 const miracleBackdropImage=miracleOverlay.querySelector('#labMiracleBackdropImage');
 const miracleReplayLabel=miracleOverlay.querySelector('#labMiracleReplayLabel');
 const miracleReplayAgain=miracleOverlay.querySelector('#labReplayAgain');
-const miracleClose=miracleOverlay.querySelector('#labMiracleClose');
 const miracleBack=miracleOverlay.querySelector('#labMiracleBack');
 
 const extra=document.createElement('div');
@@ -442,7 +440,6 @@ const closeMiracle=()=>{
   hideMiracleOverlay(false);
   dockResult();
 };
-miracleClose.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();closeMiracle();});
 miracleBack.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();closeMiracle();});
 
 function renderHistory(){
