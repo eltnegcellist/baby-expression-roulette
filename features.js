@@ -80,7 +80,7 @@ let rareTimer=null;
 let miracleSequenceToken=0;
 let currentMiracleReplay=null;
 let miracleAutoCloseTimer=null;
-let replaySourceCreationId=null;
+let replaySourceKey=null;
 
 const playShellEl=stageEl.closest('.playShell');
 const resultDock=document.createElement('div');
@@ -213,11 +213,13 @@ function replaySourceUrl(){
 }
 function replaySourceAvailable(){
   const src=replaySourceUrl();
-  return !!(src&&lastFile&&activeCreation?.times?.length&&replaySourceCreationId===activeCreation?.id);
+  const key=activeCreation?.sourceKey||null;
+  return !!(src&&lastFile&&activeCreation?.times?.length&&key&&replaySourceKey===key&&currentSourceKey===key);
 }
 function primeMiracleReplaySource(x){
-  const canUse=!!(x&&currentCreation&&x.id===currentCreation.id&&lastFile&&objectUrl);
-  replaySourceCreationId=canUse?x.id:null;
+  const key=x?.sourceKey||null;
+  const canUse=!!(x&&key&&lastFile&&objectUrl&&currentSourceKey===key);
+  replaySourceKey=canUse?key:null;
   try{miracleVideo.pause();}catch(e){}
   if(!canUse){
     miracleVideo.removeAttribute('src');
@@ -552,14 +554,21 @@ async function playMiracleSequence(kind,replayAgain=false){
 
   if(!replayed){
     const early=(Number(targetTime)||0)<2.5;
-    if(early||!replaySourceAvailable()){
-      miracleReplayLabel.textContent=early?'↶ REVERSE REPLAY':'SLOW REPLAY';
-      miracleSub.textContent=early?'逆向きフレームリプレイ':'フレームリプレイ';
+    if(early){
+      miracleReplayLabel.textContent='↶ REVERSE REPLAY';
+      miracleSub.textContent='逆向きフレームリプレイ';
       replayed=await replayExtractedFrames(targetTime,token);
+    }else{
+      miracleVideo.style.display='none';
+      miracleStill.style.display='block';
+      miracleStill.src=frameSrc;
+      miracleBackdropImage.src=frameSrc;
+      miracleReplayLabel.textContent='SLOW REPLAY';
+      miracleSub.textContent='元動画を利用できないため写真へ移ります';
+      await sleep(700);
     }
   }
   if(token!==miracleSequenceToken)return;
-  if(!replayed)await sleep(450);
   if(token!==miracleSequenceToken)return;
 
   showFinalMiraclePhoto(kind,frameSrc);
@@ -639,14 +648,21 @@ async function replayMiracleImmediately(){
 
   if(!replayed){
     const early=(Number(replay.targetTime)||0)<2.5;
-    if(early||!replaySourceAvailable()){
-      miracleReplayLabel.textContent=early?'↶ REVERSE REPLAY':'SLOW REPLAY';
-      miracleSub.textContent=early?'逆向きフレームリプレイ':'フレームリプレイ';
+    if(early){
+      miracleReplayLabel.textContent='↶ REVERSE REPLAY';
+      miracleSub.textContent='逆向きフレームリプレイ';
       replayed=await replayExtractedFrames(replay.targetTime,token);
+    }else{
+      miracleVideo.style.display='none';
+      miracleStill.style.display='block';
+      miracleStill.src=replay.frameSrc;
+      miracleBackdropImage.src=replay.frameSrc;
+      miracleReplayLabel.textContent='SLOW REPLAY';
+      miracleSub.textContent='元動画を利用できないため写真へ移ります';
+      await sleep(700);
     }
   }
   if(token!==miracleSequenceToken)return;
-  if(!replayed)await sleep(250);
   if(token!==miracleSequenceToken)return;
 
   showFinalMiraclePhoto(replay.kind,replay.frameSrc);
