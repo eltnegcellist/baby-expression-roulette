@@ -96,7 +96,7 @@ let replayWarmupGeneration=0;
 let miraclePhotoFile=null;
 let miraclePhotoKind=null;
 
-const LAB_VERSION='LAB 16';
+const LAB_VERSION='LAB 17';
 const replayDiagnostics=[];
 let lastReplayPlan=null;
 
@@ -1075,6 +1075,7 @@ function showHistoryEntry(x){
   stageEl.classList.remove('pulse');
   clearSpecial();
   undockResult();
+  setSpecialResultStyle(null);
 
   const idx=Number.isInteger(x.index)?x.index:
     activeCreation?.times?.reduce((best,t,i)=>Math.abs(t-x.time)<Math.abs((activeCreation.times[best]??Infinity)-x.time)?i:best,0);
