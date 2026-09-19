@@ -305,7 +305,7 @@ body.labMiracleOpen{overflow:hidden}
 
 
 /* LAB 6.3: replay buttons must stay above all visual FX and react immediately */
-#labReplayAgain,#labMiracleBack,#labReplaySpecial{
+#labReplayAgain,#labMiracleShare,#labMiracleBack,#labReplaySpecial{
   position:relative;
   z-index:50;
   touch-action:manipulation;
