@@ -291,3 +291,23 @@ body.labMiracleOpen{overflow:hidden}
   color:#70406f;border:1px solid #e2c579;
   font-size:11px;font-weight:950;box-shadow:none
 }
+
+
+/* LAB 6.2: final miracle photo must never fade into an invisible tap-blocking layer */
+#labMiracleOverlay{user-select:none;-webkit-user-select:none}
+#labMiracleOverlay:not(.show){pointer-events:none!important}
+#labMiracleOverlay.final-photo{
+  opacity:1!important;
+  animation:none!important;
+  filter:none!important;
+}
+#labMiracleOverlay.final-photo.miracle-mode,
+#labMiracleOverlay.final-photo.reversal-mode{
+  opacity:1!important;
+  animation:none!important;
+  filter:none!important;
+}
+#labMiracleOverlay.final-photo .labMiracleActions,
+#labMiracleOverlay.final-photo #labMiracleClose{
+  pointer-events:auto
+}
