@@ -639,6 +639,33 @@ clearHistoryBtn.addEventListener('click',()=>{
   gifStatus.style.display='none';
 });
 
+gifDownload.addEventListener('click',e=>{
+  e.preventDefault();
+  e.stopPropagation();
+  if(!gifUrl)return;
+
+  // Open the generated GIF immediately from the user's tap, which keeps
+  // Android/Chromium popup blockers from treating it as an unsolicited popup.
+  const viewer=window.open(gifUrl,'_blank');
+
+  // Start the actual file download in the same gesture.
+  const a=document.createElement('a');
+  a.href=gifUrl;
+  a.download='baby-expression-history.gif';
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  if(viewer){
+    gifStatus.style.display='block';
+    gifStatus.textContent='GIFを保存し、新しいタブで開きました。';
+  }else{
+    gifStatus.style.display='block';
+    gifStatus.textContent='GIFを保存しました。ブラウザが新しいタブをブロックしたため、下のGIFプレビューから確認できます。';
+  }
+});
+
 makeGifBtn.addEventListener('click',async()=>{
   if(history.length<2)return;
   makeGifBtn.disabled=true;
