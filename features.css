@@ -369,3 +369,6 @@ body.labGifViewerOpen{overflow:hidden}
   flex:none!important;
   z-index:60!important;
 }
+
+/* v17: miracle/reversal animation has no close button */
+#labMiracleClose{display:none!important}
