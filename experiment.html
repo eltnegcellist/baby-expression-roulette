@@ -11,7 +11,7 @@
 <title>赤ちゃん表情おみくじ LAB</title>
 <link rel="stylesheet" href="./style.css?v=15">
 <link rel="stylesheet" href="./deluxe.css?v=15">
-<link rel="stylesheet" href="./experiment.css?v=5">
+<link rel="stylesheet" href="./experiment.css?v=6">
 <style>
 body:not(.show-score-details) .scoreChip,
 body:not(.show-score-details) .scoreDetails,
@@ -24,19 +24,20 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <header class="hero">
   <div class="heroMark" aria-hidden="true">🎴</div>
   <div class="heroText">
-    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge labBadge">LAB 5</span></div>
+    <div class="heroTopline"><span class="eyebrow">BABY MOMENTS</span><span class="versionBadge labBadge">LAB 6</span></div>
     <h1>赤ちゃん表情おみくじ</h1>
     <p class="heroCatch">かわいい一瞬を、おみくじに。 <span class="labInline">実験版</span></p>
     <p class="lead">v15を土台に、新しい遊び方を試す実験版です。元のv15は別URLでそのまま残しています。</p>
   </div>
 </header>
-<div class="labNotice">🧪 実験中：ラッキーカラー・奇跡の大逆転・履歴GIFを試せます</div>
+<div class="labNotice">🧪 実験中：奇跡のスローリプレイ・フル画面写真・履歴GIFを試せます</div>
 <section class="card">
   <div class="step">CREATE</div>
   <h2>新しいおみくじを作る</h2>
   <div class="filebox">
     <input id="fileInput" type="file" accept="video/*">
     <div class="note">動画を選ぶと自動で表情コマを抽出します。処理はブラウザ内だけで行い、元動画は外部へ送信しません。</div>
+    <div class="labMiracleHint">✨ ときどき、止まった一瞬が特別な「奇跡のリプレイ」に変わることも…？</div>
   </div>
   <div id="progressWrap"><div class="progress"><div id="progressBar"></div></div><div id="progressText">準備中...</div></div>
   <details class="opt">
@@ -94,7 +95,7 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
 <div id="bigOverlay"><div id="bigText">大吉！</div></div>
 <script src="./app.js?v=15" defer></script>
 <script src="./deluxe.js?v=15" defer></script>
-<script src="./experiment.js?v=5" defer></script>
+<script src="./experiment.js?v=6" defer></script>
 <script>
 (()=>{
   const scoreBox=document.getElementById('showScores');
@@ -121,6 +122,6 @@ body:not(.show-fortune-map) #grid .fchip{display:none!important}
   sync();rename();
 })();
 </script>
-<!-- LAB5 -->
+<!-- LAB6 -->
 </body>
 </html>
