@@ -19,6 +19,34 @@ const gifPreview=document.getElementById('labGifPreview');
 const gifDownload=document.getElementById('labGifDownload');
 if(!stageEl||!resultCardEl||!collectionEl||!historyEl)return;
 
+const gifViewer=document.createElement('div');
+gifViewer.id='labGifViewer';
+gifViewer.innerHTML=
+  '<button id="labGifViewerClose" type="button" aria-label="GIFを閉じる">×</button>'+
+  '<div class="labGifViewerInner">'+
+    '<div class="labGifViewerTitle">作成したGIF</div>'+
+    '<img id="labGifViewerImage" alt="作成したGIF">'+
+    '<div class="labGifViewerNote">保存したGIFと同じ内容です</div>'+
+    '<button id="labGifViewerDone" type="button">閉じる</button>'+
+  '</div>';
+document.body.appendChild(gifViewer);
+const gifViewerImage=gifViewer.querySelector('#labGifViewerImage');
+const gifViewerClose=gifViewer.querySelector('#labGifViewerClose');
+const gifViewerDone=gifViewer.querySelector('#labGifViewerDone');
+function openGifViewer(){
+  if(!gifUrl)return;
+  gifViewerImage.src=gifUrl;
+  gifViewer.classList.add('show');
+  document.body.classList.add('labGifViewerOpen');
+}
+function closeGifViewer(){
+  gifViewer.classList.remove('show');
+  gifViewerImage.removeAttribute('src');
+  document.body.classList.remove('labGifViewerOpen');
+}
+gifViewerClose.addEventListener('click',closeGifViewer);
+gifViewerDone.addEventListener('click',closeGifViewer);
+
 const MIRACLE_DAIKICHI_RATE=.35;
 const MIRACLE_DAIKYO_RATE=.40;
 const MIRACLE_DAIKICHI_RATE_TEST=.50;
@@ -507,6 +535,7 @@ function showHistoryEntry(x){
   document.getElementById('playSection')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function clearGifResult(){
+  closeGifViewer();
   if(gifUrl){
     URL.revokeObjectURL(gifUrl);
     gifUrl=null;
@@ -644,11 +673,6 @@ gifDownload.addEventListener('click',e=>{
   e.stopPropagation();
   if(!gifUrl)return;
 
-  // Open the generated GIF immediately from the user's tap, which keeps
-  // Android/Chromium popup blockers from treating it as an unsolicited popup.
-  const viewer=window.open(gifUrl,'_blank');
-
-  // Start the actual file download in the same gesture.
   const a=document.createElement('a');
   a.href=gifUrl;
   a.download='baby-expression-history.gif';
@@ -657,13 +681,9 @@ gifDownload.addEventListener('click',e=>{
   a.click();
   a.remove();
 
-  if(viewer){
-    gifStatus.style.display='block';
-    gifStatus.textContent='GIFを保存し、新しいタブで開きました。';
-  }else{
-    gifStatus.style.display='block';
-    gifStatus.textContent='GIFを保存しました。ブラウザが新しいタブをブロックしたため、下のGIFプレビューから確認できます。';
-  }
+  gifStatus.style.display='block';
+  gifStatus.textContent='GIFを保存しました。全画面で表示します。';
+  openGifViewer();
 });
 
 makeGifBtn.addEventListener('click',async()=>{
