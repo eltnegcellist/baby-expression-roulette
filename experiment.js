@@ -54,6 +54,7 @@ let dockTimer=null;
 let rareTimer=null;
 let miracleSequenceToken=0;
 let currentMiracleReplay=null;
+let miracleAutoCloseTimer=null;
 
 const playShellEl=stageEl.closest('.playShell');
 const resultDock=document.createElement('div');
@@ -176,6 +177,8 @@ function replaySourceAvailable(){
 }
 function cancelMiracleSequence(clearReplay=false){
   miracleSequenceToken++;
+  clearTimeout(miracleAutoCloseTimer);
+  miracleAutoCloseTimer=null;
   try{miracleVideo.pause();}catch(e){}
   if(clearReplay)currentMiracleReplay=null;
 }
@@ -243,6 +246,7 @@ async function replayOriginalMoment(targetTime,token){
 }
 function showFinalMiraclePhoto(kind,frameSrc){
   try{miracleVideo.pause();}catch(e){}
+  clearTimeout(miracleAutoCloseTimer);
   miracleVideo.style.display='none';
   miracleStill.src=frameSrc;
   miracleBackdropImage.src=frameSrc;
@@ -263,6 +267,14 @@ function showFinalMiraclePhoto(kind,frameSrc){
     playSpecialSound('miracle');
     if(navigator.vibrate)navigator.vibrate([90,45,120,55,180,60,260]);
   }
+  // Keep the full-screen photo long enough to enjoy, then fully remove
+  // the overlay so no invisible layer can intercept taps.
+  miracleAutoCloseTimer=setTimeout(()=>{
+    if(miracleOverlay.classList.contains('final-photo')){
+      hideMiracleOverlay(false);
+      dockResult();
+    }
+  },4200);
 }
 async function playMiracleSequence(kind,replayAgain=false){
   const frameSrc=currentMiracleReplay?.frameSrc||(playImageEl.currentSrc||playImageEl.src);
