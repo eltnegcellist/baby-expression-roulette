@@ -97,6 +97,7 @@ let specialMovieUrl=null;
 let specialMovieBlob=null;
 let specialMovieKey=null;
 let specialMovieGenerating=false;
+let specialMovieGenerationToken=0;
 
 const LAB_VERSION='LAB 22';
 const replayDiagnostics=[];
@@ -378,6 +379,7 @@ function setSpecialMovieButtons(text,disabled=false){
   });
 }
 function resetSpecialMovieExport(){
+  specialMovieGenerationToken++;
   if(specialMovieUrl){
     URL.revokeObjectURL(specialMovieUrl);
     specialMovieUrl=null;
@@ -638,43 +640,49 @@ async function renderSpecialMovie(kind,replay,onProgress){
   recorder.start(250);
   const begin=performance.now();
   let lastProgress=-1;
-  await new Promise(resolve=>{
-    const tick=now=>{
-      const t=Math.min(timeline.total,(now-begin)/1000);
-      if(movieVideo&&t>=timeline.intro&&!videoStarted){
-        videoStarted=true;
-        movieVideo.play().catch(err=>{
-          videoFailed=true;
-          diag('movie-video-play-fallback',{name:err?.name||'Error',message:String(err?.message||err)});
+  try{
+    await new Promise(resolve=>{
+      const tick=now=>{
+        const t=Math.min(timeline.total,(now-begin)/1000);
+        if(movieVideo&&t>=timeline.intro&&!videoStarted){
+          videoStarted=true;
+          movieVideo.play().catch(err=>{
+            videoFailed=true;
+            diag('movie-video-play-fallback',{name:err?.name||'Error',message:String(err?.message||err)});
+          });
+        }
+        if(movieVideo&&!videoPaused&&t>=timeline.intro+timeline.slow){
+          videoPaused=true;
+          try{movieVideo.pause();}catch(e){}
+        }
+        drawSpecialMovieFrame(ctx,{
+          kind,t,timeline,still,video:movieVideo,
+          videoReady:()=>!videoFailed,
+          particles,w,h
         });
-      }
-      if(movieVideo&&!videoPaused&&t>=timeline.intro+timeline.slow){
-        videoPaused=true;
-        try{movieVideo.pause();}catch(e){}
-      }
-      drawSpecialMovieFrame(ctx,{
-        kind,t,timeline,still,video:movieVideo,
-        videoReady:()=>!videoFailed,
-        particles,w,h
-      });
-      const percent=Math.min(99,Math.floor(t/timeline.total*100));
-      if(percent!==lastProgress&&percent%4===0){
-        lastProgress=percent;
-        onProgress?.(percent);
-      }
-      if(t>=timeline.total)return resolve();
+        const percent=Math.min(99,Math.floor(t/timeline.total*100));
+        if(percent!==lastProgress&&percent%4===0){
+          lastProgress=percent;
+          onProgress?.(percent);
+        }
+        if(t>=timeline.total)return resolve();
+        requestAnimationFrame(tick);
+      };
       requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  });
-  try{movieVideo?.pause();}catch(e){}
-  recorder.stop();
-  const blob=await finished;
-  source?.cleanup?.();
-  stream.getTracks().forEach(t=>t.stop());
-  onProgress?.(100);
-  if(!blob.size)throw new Error('生成したムービーが空でした');
-  return {blob,usedSource:!!movieVideo&&!videoFailed,width:w,height:h};
+    });
+    try{movieVideo?.pause();}catch(e){}
+    recorder.stop();
+    const blob=await finished;
+    onProgress?.(100);
+    if(!blob.size)throw new Error('生成したムービーが空でした');
+    return {blob,usedSource:!!movieVideo&&!videoFailed,width:w,height:h};
+  }finally{
+    try{
+      if(recorder.state!=='inactive')recorder.stop();
+    }catch(e){}
+    source?.cleanup?.();
+    stream.getTracks().forEach(t=>t.stop());
+  }
 }
 async function saveCurrentSpecialMovie(){
   const replay=currentMiracleReplay;
@@ -696,12 +704,14 @@ async function saveCurrentSpecialMovie(){
   }
 
   specialMovieGenerating=true;
+  const generation=++specialMovieGenerationToken;
   setSpecialMovieButtons('🎬 生成中…',true);
   setSpecialMovieStatus('ムービーを準備しています…');
   try{
     const result=await renderSpecialMovie(replay.kind,replay,p=>{
-      setSpecialMovieStatus('ムービー生成中… '+p+'%');
+      if(generation===specialMovieGenerationToken)setSpecialMovieStatus('ムービー生成中… '+p+'%');
     });
+    if(generation!==specialMovieGenerationToken)return;
     if(specialMovieUrl)URL.revokeObjectURL(specialMovieUrl);
     specialMovieBlob=result.blob;
     specialMovieUrl=URL.createObjectURL(result.blob);
@@ -713,12 +723,13 @@ async function saveCurrentSpecialMovie(){
     downloadSpecialMovie();
     diag('movie-export-success',{kind:replay.kind,usedSource:result.usedSource,size:result.blob.size,width:result.width,height:result.height});
   }catch(err){
+    if(generation!==specialMovieGenerationToken)return;
     console.error(err);
     setSpecialMovieButtons('🎬 ムービー保存',false);
     setSpecialMovieStatus(err?.message||'ムービーを作成できませんでした','error');
     diag('movie-export-error',{kind:replay.kind,name:err?.name||'Error',message:String(err?.message||err)});
   }finally{
-    specialMovieGenerating=false;
+    if(generation===specialMovieGenerationToken)specialMovieGenerating=false;
   }
 }
 
