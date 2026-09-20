@@ -416,7 +416,6 @@ body.labGifViewerOpen{overflow:hidden}
 @media(max-width:520px){
   #labMiracleOverlay .labMiracleActions{width:min(96vw,540px);gap:6px}
   #labMiracleOverlay .labMiracleActions button{font-size:10px;padding:10px 7px}
-  #labMiracleMediaActions button{min-width:110px}
 }
 
 
