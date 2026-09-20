@@ -94,7 +94,7 @@ let miracleAutoCloseTimer=null;
 let replaySourceKey=null;
 let replayWarmupGeneration=0;
 
-const LAB_VERSION='LAB 20';
+const LAB_VERSION='LAB 21';
 const replayDiagnostics=[];
 let lastReplayPlan=null;
 
@@ -147,8 +147,8 @@ function runReplayRegressionTests(){
       })()
     },
     {
-      name:'大逆転は大凶表示の後に公開',
-      pass:revealSpecialImmediately('reversal')===false&&revealSpecialImmediately('miracle')===true
+      name:'特別結果は元の運勢表示の後に公開',
+      pass:revealSpecialImmediately('reversal')===false&&revealSpecialImmediately('miracle')===false
     },
     {
       name:'必須関数が定義済み',
@@ -251,7 +251,7 @@ function setSpecialResultStyle(special){
 
 }
 function revealSpecialImmediately(special){
-  return special==='miracle';
+  return false;
 }
 function specialFortuneDisplay(special,baseFortune){
   if(special==='miracle')return {head:'きょうの運勢',fortune:'特大吉',badge:'✨ 特大吉'};
@@ -763,6 +763,8 @@ function showFinalMiraclePhoto(kind,frameSrc){
     playSpecialSound('reversal');
     if(navigator.vibrate)navigator.vibrate([120,40,120,40,220,60,320]);
   }else{
+    // Until this moment the normal result card intentionally remains "大吉".
+    applySpecialFortuneDisplay('miracle','大吉');
     miracleKicker.textContent='大吉の、その先へ';
     miracleTitle.textContent='特大吉！';
     miracleSub.textContent='✨ 奇跡の一枚 ✨';
