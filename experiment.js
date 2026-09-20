@@ -93,10 +93,9 @@ let currentMiracleReplay=null;
 let miracleAutoCloseTimer=null;
 let replaySourceKey=null;
 let replayWarmupGeneration=0;
-let miraclePhotoFile=null;
-let miraclePhotoKind=null;
+let currentMediaItem=null;
 
-const LAB_VERSION='LAB 17';
+const LAB_VERSION='LAB 18';
 const replayDiagnostics=[];
 let lastReplayPlan=null;
 
@@ -149,15 +148,16 @@ function runReplayRegressionTests(){
       })()
     },
     {
-      name:'奇跡UXラベル',
-      pass:miracleShareText('miracle').includes('特大吉')&&miracleShareText('reversal').includes('大逆転大吉')
+      name:'共有テキスト',
+      pass:mediaShareText({displayFortune:'特大吉',special:'miracle'}).includes('特大吉')&&
+        mediaShareText({displayFortune:'大逆転大吉',special:'reversal'}).includes('大逆転大吉')
     },
     {
       name:'必須関数が定義済み',
       pass:[
         replayPlan,executeReplayPlan,runForwardSourceReplay,runReverseSourceReplay,
-        specialFortuneDisplay,applySpecialFortuneDisplay,prepareMiraclePhotoFile,
-        savePreparedMiraclePhoto,sharePreparedMiraclePhoto
+        specialFortuneDisplay,applySpecialFortuneDisplay,buildFortunePhotoFile,
+        saveCurrentMedia,shareCurrentMedia
       ].every(x=>typeof x==='function')
     }
   ];
@@ -174,6 +174,35 @@ const playShellEl=stageEl.closest('.playShell');
 const resultDock=document.createElement('div');
 resultDock.id='labResultDock';
 playShellEl.insertAdjacentElement('afterend',resultDock);
+
+const commonMediaBar=document.createElement('div');
+commonMediaBar.id='labCommonMediaBar';
+commonMediaBar.innerHTML=
+  '<button id="labCommonSave" type="button">↓ 保存</button>'+
+  '<button id="labCommonShare" type="button">↗ 共有</button>'+
+  '<div id="labCommonMediaStatus" aria-live="polite"></div>';
+resultDock.insertAdjacentElement('afterend',commonMediaBar);
+const commonSaveBtn=commonMediaBar.querySelector('#labCommonSave');
+const commonShareBtn=commonMediaBar.querySelector('#labCommonShare');
+const commonMediaStatus=commonMediaBar.querySelector('#labCommonMediaStatus');
+
+const saveChoice=document.createElement('div');
+saveChoice.id='labSaveChoice';
+saveChoice.innerHTML=
+  '<div class="labSaveChoiceBackdrop"></div>'+
+  '<div class="labSaveChoiceSheet" role="dialog" aria-modal="true" aria-label="写真の保存方法">'+
+    '<div class="labSaveChoiceTitle">保存する画像を選ぶ</div>'+
+    '<div class="labSaveChoiceNote">元の写真は変更されません</div>'+
+    '<button id="labSavePlain" type="button"><b>写真のみ</b><span>写真そのものを保存</span></button>'+
+    '<button id="labSaveFortune" type="button"><b>運勢入り</b><span>写真に運勢を重ねて保存</span></button>'+
+    '<button id="labSaveCancel" type="button">キャンセル</button>'+
+  '</div>';
+document.body.appendChild(saveChoice);
+const savePlainBtn=saveChoice.querySelector('#labSavePlain');
+const saveFortuneBtn=saveChoice.querySelector('#labSaveFortune');
+const saveCancelBtn=saveChoice.querySelector('#labSaveCancel');
+const saveChoiceBackdrop=saveChoice.querySelector('.labSaveChoiceBackdrop');
+
 
 const miracleOverlay=document.createElement('div');
 miracleOverlay.id='labMiracleOverlay';
@@ -217,24 +246,14 @@ extra.innerHTML=
   '<div id="labLucky"></div>'+
   '<div id="labSpecialLine"></div>'+
   '<button id="labReplaySpecial" type="button">✨ 奇跡のリプレイ</button>'+
-  '<div id="labMiracleMediaActions">'+
-    '<button id="labDownloadMiracle" type="button">↓ 写真を端末に保存</button>'+
-    '<button id="labShareMiracle" type="button">↗ 写真を共有</button>'+
-  '</div>'+
-  '<div id="labMiracleMediaStatus" aria-live="polite"></div>'+
   '<button id="labSavePhoto" type="button">♡ 今日の一枚に保存</button>';
 resultCardEl.appendChild(extra);
 const specialEmblem=extra.querySelector('#labSpecialEmblem');
 const luckyEl=extra.querySelector('#labLucky');
 const specialLine=extra.querySelector('#labSpecialLine');
 const replaySpecialBtn=extra.querySelector('#labReplaySpecial');
-const miracleMediaActions=extra.querySelector('#labMiracleMediaActions');
-const downloadMiracleBtn=extra.querySelector('#labDownloadMiracle');
-const shareMiracleBtn=extra.querySelector('#labShareMiracle');
-const miracleMediaStatus=extra.querySelector('#labMiracleMediaStatus');
 const saveBtn=extra.querySelector('#labSavePhoto');
 replaySpecialBtn.style.display='none';
-miracleMediaActions.style.display='none';
 
 function randomOf(arr){return arr[Math.floor(Math.random()*arr.length)];}
 function pickLucky(){return {color:randomOf(LUCKY_COLORS),point:randomOf(LUCKY_POINTS)};}
@@ -252,12 +271,14 @@ function specialFor(fortune){
   if(fortune==='大凶'&&Math.random()<daikyoRate)return 'reversal';
   return null;
 }
-function miracleFilename(kind,type='image/jpeg'){
+function mediaFilename(item,withFortune=false,type='image/jpeg'){
   const ext=type.includes('png')?'png':'jpg';
-  const label=kind==='reversal'?'daigyakuten-daikichi':'tokudaikichi';
-  return 'baby-'+label+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+ext;
+  const base=item?.displayFortune
+    ? String(item.displayFortune).replace(/\s+/g,'-')
+    : 'expression';
+  return 'baby-'+base+(withFortune?'-fortune':'')+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+ext;
 }
-function fileFromDataUrl(dataUrl,kind){
+function fileFromDataUrl(dataUrl,item){
   if(typeof dataUrl!=='string'||!dataUrl.startsWith('data:'))return null;
   const comma=dataUrl.indexOf(',');
   if(comma<0)return null;
@@ -267,80 +288,198 @@ function fileFromDataUrl(dataUrl,kind){
   const raw=base64?atob(dataUrl.slice(comma+1)):decodeURIComponent(dataUrl.slice(comma+1));
   const bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
-  return new File([bytes],miracleFilename(kind,type),{type,lastModified:Date.now()});
+  return new File([bytes],mediaFilename(item,false,type),{type,lastModified:Date.now()});
 }
-async function prepareMiraclePhotoFile(src,kind){
-  miraclePhotoFile=null;
-  miraclePhotoKind=kind||null;
+async function sourceToFile(src,item){
   try{
-    const direct=fileFromDataUrl(src,kind);
-    if(direct){
-      miraclePhotoFile=direct;
-      return direct;
-    }
+    const direct=fileFromDataUrl(src,item);
+    if(direct)return direct;
     const response=await fetch(src);
     const blob=await response.blob();
-    miraclePhotoFile=new File([blob],miracleFilename(kind,blob.type||'image/jpeg'),{
+    return new File([blob],mediaFilename(item,false,blob.type||'image/jpeg'),{
       type:blob.type||'image/jpeg',lastModified:Date.now()
     });
-    return miraclePhotoFile;
   }catch(err){
-    diag('miracle-file-error',{name:err?.name||'Error',message:String(err?.message||err)});
+    diag('media-file-error',{name:err?.name||'Error',message:String(err?.message||err)});
     return null;
   }
 }
-function miracleShareText(kind){
-  return kind==='reversal'
-    ? '大凶かと思ったら…大逆転大吉！ 奇跡の一枚 🌈'
-    : '特大吉！ 奇跡の一枚 ✨';
+function canvasToFile(canvas,name,type='image/jpeg',quality=.94){
+  return new Promise(resolve=>{
+    canvas.toBlob(blob=>{
+      if(!blob)return resolve(null);
+      resolve(new File([blob],name,{type:blob.type||type,lastModified:Date.now()}));
+    },type,quality);
+  });
 }
-function setMiracleMediaStatus(text,state=''){
-  if(!miracleMediaStatus)return;
-  miracleMediaStatus.textContent=text||'';
-  miracleMediaStatus.className=state?('state-'+state):'';
-}
-function savePreparedMiraclePhoto(){
-  if(!miraclePhotoFile){
-    setMiracleMediaStatus('写真を準備できませんでした','error');
-    return false;
+async function buildFortunePhotoFile(item){
+  if(!item?.src||!item?.displayFortune)return null;
+  try{
+    const img=await loadImage(item.src);
+    const canvas=document.createElement('canvas');
+    canvas.width=img.naturalWidth;
+    canvas.height=img.naturalHeight;
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+
+    const w=canvas.width,h=canvas.height;
+    const bandH=Math.max(Math.round(h*.25),Math.round(Math.min(w,h)*.22));
+    const y=h-bandH;
+    const grad=ctx.createLinearGradient(0,y,0,h);
+    if(item.special==='miracle'){
+      grad.addColorStop(0,'rgba(93,57,0,0)');
+      grad.addColorStop(.28,'rgba(112,69,0,.72)');
+      grad.addColorStop(1,'rgba(70,42,0,.94)');
+    }else if(item.special==='reversal'){
+      grad.addColorStop(0,'rgba(49,24,69,0)');
+      grad.addColorStop(.28,'rgba(71,41,103,.74)');
+      grad.addColorStop(1,'rgba(39,34,82,.95)');
+    }else{
+      grad.addColorStop(0,'rgba(22,18,17,0)');
+      grad.addColorStop(.3,'rgba(34,27,24,.68)');
+      grad.addColorStop(1,'rgba(25,20,18,.94)');
+    }
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,y,w,bandH);
+
+    const pad=Math.max(22,Math.round(w*.055));
+    const small=Math.max(20,Math.round(w*.038));
+    const big=Math.max(38,Math.round(w*.082));
+    const tiny=Math.max(15,Math.round(w*.025));
+    ctx.textAlign='left';
+    ctx.textBaseline='alphabetic';
+    ctx.shadowColor='rgba(0,0,0,.55)';
+    ctx.shadowBlur=Math.max(3,Math.round(w*.008));
+    ctx.fillStyle='#fff';
+    ctx.font='700 '+small+'px system-ui, sans-serif';
+    const head=item.special==='reversal'?'大凶かと思ったら…':'きょうの運勢';
+    ctx.fillText(head,pad,y+Math.round(bandH*.38));
+    ctx.font='900 '+big+'px system-ui, sans-serif';
+    ctx.fillText(item.displayFortune,pad,y+Math.round(bandH*.72));
+    ctx.font='700 '+tiny+'px system-ui, sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.82)';
+    ctx.textAlign='right';
+    ctx.fillText('赤ちゃん表情おみくじ',w-pad,h-Math.max(12,Math.round(h*.018)));
+
+    return await canvasToFile(
+      canvas,
+      mediaFilename(item,true,'image/jpeg'),
+      'image/jpeg',
+      .94
+    );
+  }catch(err){
+    diag('fortune-image-error',{name:err?.name||'Error',message:String(err?.message||err)});
+    return null;
   }
-  const url=URL.createObjectURL(miraclePhotoFile);
+}
+function setCommonMediaStatus(text,state=''){
+  commonMediaStatus.textContent=text||'';
+  commonMediaStatus.className=state?('state-'+state):'';
+}
+function downloadFile(file){
+  if(!file)return false;
+  const url=URL.createObjectURL(file);
   const a=document.createElement('a');
   a.href=url;
-  a.download=miraclePhotoFile.name;
+  a.download=file.name;
   a.style.display='none';
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),2000);
-  setMiracleMediaStatus('端末への保存を開始しました','success');
   return true;
 }
-async function sharePreparedMiraclePhoto(){
-  if(!miraclePhotoFile){
-    setMiracleMediaStatus('写真を準備できませんでした','error');
+function mediaShareText(item){
+  if(!item?.displayFortune)return '赤ちゃんのかわいい一瞬 📷';
+  if(item.special==='reversal')return '大凶かと思ったら…大逆転大吉！ 奇跡の一枚 🌈';
+  if(item.special==='miracle')return '特大吉！ 奇跡の一枚 ✨';
+  return 'きょうの運勢は「'+item.displayFortune+'」でした 🎴';
+}
+async function saveCurrentMedia(withFortune=false){
+  const item=currentMediaItem;
+  if(!item?.src){
+    setCommonMediaStatus('保存する写真がありません','error');
     return false;
   }
-  const payload={
-    files:[miraclePhotoFile],
-    title:'赤ちゃん表情おみくじ',
-    text:miracleShareText(miraclePhotoKind)
-  };
+  setCommonMediaStatus('画像を準備中…');
+  const file=withFortune
+    ? await buildFortunePhotoFile(item)
+    : await sourceToFile(item.src,item);
+  if(!file){
+    setCommonMediaStatus('画像を準備できませんでした','error');
+    return false;
+  }
+  downloadFile(file);
+  setCommonMediaStatus(withFortune?'運勢入り画像を保存しました':'写真を保存しました','success');
+  return true;
+}
+async function shareCurrentMedia(){
+  const item=currentMediaItem;
+  if(!item?.src){
+    setCommonMediaStatus('共有する写真がありません','error');
+    return false;
+  }
+  setCommonMediaStatus('共有用の写真を準備中…');
+  const file=await sourceToFile(item.src,item);
+  if(!file){
+    setCommonMediaStatus('写真を準備できませんでした','error');
+    return false;
+  }
+  const payload={files:[file],title:'赤ちゃん表情おみくじ',text:mediaShareText(item)};
   try{
     if(navigator.share&&(!navigator.canShare||navigator.canShare({files:payload.files}))){
       await navigator.share(payload);
-      setMiracleMediaStatus('共有しました','success');
+      setCommonMediaStatus('共有しました','success');
       return true;
     }
-    savePreparedMiraclePhoto();
-    setMiracleMediaStatus('共有機能がないため写真を保存しました','success');
+    downloadFile(file);
+    setCommonMediaStatus('共有機能がないため写真を保存しました','success');
     return false;
   }catch(err){
-    if(err?.name==='AbortError')return false;
-    diag('miracle-share-error',{name:err?.name||'Error',message:String(err?.message||err)});
-    setMiracleMediaStatus('共有できませんでした','error');
+    if(err?.name==='AbortError'){
+      setCommonMediaStatus('');
+      return false;
+    }
+    diag('media-share-error',{name:err?.name||'Error',message:String(err?.message||err)});
+    setCommonMediaStatus('共有できませんでした','error');
     return false;
   }
+}
+function openSaveChoice(){
+  if(!currentMediaItem?.src)return;
+  saveFortuneBtn.style.display=currentMediaItem.displayFortune?'flex':'none';
+  saveChoice.classList.add('show');
+  document.body.classList.add('labSaveChoiceOpen');
+}
+function closeSaveChoice(){
+  saveChoice.classList.remove('show');
+  document.body.classList.remove('labSaveChoiceOpen');
+}
+function setCurrentMediaItem(item){
+  currentMediaItem=item?.src?item:null;
+  commonMediaBar.classList.toggle('show',!!currentMediaItem);
+  if(currentMediaItem)setCommonMediaStatus('');
+}
+function syncCommonMediaFromCurrent(){
+  if(running||!activeCreation){
+    setCurrentMediaItem(null);
+    return;
+  }
+  const isFortune=activeCreation.mode==='omikuji';
+  const fortune=isFortune
+    ? (currentLab?.fortune||(resultTextEl.textContent||'').trim()||null)
+    : null;
+  const special=isFortune?(currentLab?.special||null):null;
+  const displayFortune=isFortune&&fortune
+    ? (currentLab?.displayFortune||specialFortuneDisplay(special,fortune).fortune)
+    : null;
+  setCurrentMediaItem({
+    src:playImageEl.currentSrc||playImageEl.src,
+    fortune,
+    special,
+    displayFortune,
+    message:isFortune?(messageEl?.textContent||''):''
+  });
 }
 function setSpecialResultStyle(special){
   resultCardEl.classList.toggle('labSpecialMiracle',special==='miracle');
@@ -353,8 +492,7 @@ function setSpecialResultStyle(special){
         ? '🌈 REVERSAL FORTUNE 🌈'
         : '';
   }
-  miracleMediaActions.style.display=special?'flex':'none';
-  if(!special)setMiracleMediaStatus('');
+
 }
 function specialFortuneDisplay(special,baseFortune){
   if(special==='miracle')return {head:'きょうの運勢',fortune:'特大吉',badge:'✨ 特大吉'};
@@ -847,7 +985,7 @@ async function executeReplayPlan(targetTime,token,frameSrc){
 
 function showFinalMiraclePhoto(kind,frameSrc){
   diag('final-photo',{kind,route:lastReplayPlan?.route||null,targetTime:lastReplayPlan?.targetTime??null});
-  if(!miraclePhotoFile||miraclePhotoKind!==kind)prepareMiraclePhotoFile(frameSrc,kind);
+
   try{miracleVideo.pause();}catch(e){}
   clearTimeout(miracleAutoCloseTimer);
   miracleVideo.style.display='none';
@@ -946,8 +1084,8 @@ function clearLab(){
   clearSpecial();
   undockResult();
   setSpecialResultStyle(null);
-  miraclePhotoFile=null;
-  miraclePhotoKind=null;
+  setCurrentMediaItem(null);
+  closeSaveChoice();
   extra.style.display='none';
   specialLine.style.display='none';
   currentLab=null;
@@ -1003,18 +1141,32 @@ miracleShare.addEventListener('click',async e=>{
   e.stopPropagation();
   clearTimeout(miracleAutoCloseTimer);
   miracleAutoCloseTimer=null;
-  await sharePreparedMiraclePhoto();
+  await shareCurrentMedia();
 });
-downloadMiracleBtn.addEventListener('click',e=>{
+commonSaveBtn.addEventListener('click',e=>{
   e.preventDefault();
   e.stopPropagation();
-  savePreparedMiraclePhoto();
+  openSaveChoice();
 });
-shareMiracleBtn.addEventListener('click',async e=>{
+commonShareBtn.addEventListener('click',async e=>{
   e.preventDefault();
   e.stopPropagation();
-  await sharePreparedMiraclePhoto();
+  await shareCurrentMedia();
 });
+savePlainBtn.addEventListener('click',async e=>{
+  e.preventDefault();
+  e.stopPropagation();
+  closeSaveChoice();
+  await saveCurrentMedia(false);
+});
+saveFortuneBtn.addEventListener('click',async e=>{
+  e.preventDefault();
+  e.stopPropagation();
+  closeSaveChoice();
+  await saveCurrentMedia(true);
+});
+saveCancelBtn.addEventListener('click',closeSaveChoice);
+saveChoiceBackdrop.addEventListener('click',closeSaveChoice);
 
 miracleReplayAgain.addEventListener('pointerdown',e=>{
   e.preventDefault();
@@ -1098,13 +1250,19 @@ function showHistoryEntry(x){
 
   currentLab={fortune:x.fortune,displayFortune:x.displayFortune||specialFortuneDisplay(x.special,x.fortune).fortune,lucky:x.lucky||pickLucky(),special:x.special,fromHistory:true};
   renderLucky(currentLab.lucky);
+  setCurrentMediaItem({
+    src:x.image,
+    fortune:x.fortune,
+    special:x.special,
+    displayFortune:currentLab.displayFortune,
+    message:x.message||''
+  });
 
   specialLine.style.display='none';
   specialLine.className='';
   replaySpecialBtn.style.display='none';
   if(x.special){
     currentMiracleReplay={kind:x.special,frameSrc:x.image,targetTime:x.targetTime??x.time,index:x.index};
-    prepareMiraclePhotoFile(x.image,x.special);
     replaySpecialBtn.style.display='block';
     specialLine.textContent=x.special==='reversal'?'🌈 大逆転！奇跡の一枚':'✨ 奇跡の一枚';
     specialLine.className=x.special==='reversal'?'reversal':'miracle';
@@ -1162,7 +1320,6 @@ function showLabResult(){
       targetTime:Number.isFinite(targetTime)?targetTime:currentIndex,
       index:currentIndex
     };
-    prepareMiraclePhotoFile(currentMiracleReplay.frameSrc,special);
     replaySpecialBtn.style.display='block';
   }
 
@@ -1211,12 +1368,17 @@ stopRun=function(){
   }
   previousStop();
   if(restore!==null)activeCreation.fortunes[currentIndex]=restore;
-  setTimeout(showLabResult,40);
+  setTimeout(()=>{
+    showLabResult();
+    syncCommonMediaFromCurrent();
+  },40);
 };
 
 const previousStart=startRun;
 startRun=function(withSound=true){
   clearLab();
+  setCurrentMediaItem(null);
+  closeSaveChoice();
   if(resultHeadEl)resultHeadEl.textContent='きょうの運勢';
   previousStart(withSound);
 };
