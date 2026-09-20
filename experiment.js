@@ -99,7 +99,7 @@ let specialMovieKey=null;
 let specialMovieGenerating=false;
 let specialMovieGenerationToken=0;
 
-const LAB_VERSION='LAB 22';
+const LAB_VERSION='LAB 23';
 const replayDiagnostics=[];
 let lastReplayPlan=null;
 
@@ -156,8 +156,11 @@ function runReplayRegressionTests(){
       pass:revealSpecialImmediately('reversal')===false&&revealSpecialImmediately('miracle')===false
     },
     {
-      name:'特別ムービーの長さ',
-      pass:specialMovieTimeline('miracle').total>=5&&specialMovieTimeline('reversal').total>=6
+      name:'保存ムービーは実演出と同じタイムライン',
+      pass:Math.abs(specialMovieTimeline('miracle',{targetTime:12}).intro-.52)<.001&&
+        Math.abs(specialMovieTimeline('reversal',{targetTime:12}).intro-.78)<.001&&
+        Math.abs(specialMovieTimeline('miracle',{targetTime:12}).slow-(MIRACLE_REPLAY_LEAD_SECONDS/MIRACLE_REPLAY_RATE))<.02&&
+        Math.abs(specialMovieTimeline('miracle',{targetTime:12}).final-4.2)<.001
     },
     {
       name:'必須関数が定義済み',
@@ -334,10 +337,27 @@ function fillMiracleSparkles(kind='miracle'){
   }
 }
 
-function specialMovieTimeline(kind){
-  return kind==='reversal'
-    ? {intro:1.65,slow:3.25,final:2.10,total:7.00}
-    : {intro:.80,slow:3.05,final:1.95,total:5.80};
+function specialMovieTimeline(kind,replay=null){
+  const target=Math.max(0,Number(replay?.targetTime)||MIRACLE_REPLAY_LEAD_SECONDS);
+  const lead=Math.min(MIRACLE_REPLAY_LEAD_SECONDS,Math.max(.04,target));
+  const slow=Math.max(.35,lead/MIRACLE_REPLAY_RATE);
+  const intro=kind==='reversal'?.78:.52;
+  const final=4.20;
+  return {intro,slow,final,total:intro+slow+final,lead,rate:MIRACLE_REPLAY_RATE};
+}
+function specialSequenceSpec(kind,replay=null){
+  const t=specialMovieTimeline(kind,replay);
+  return {
+    ...t,
+    introDuration:t.intro,
+    intro:kind==='reversal'
+      ? {kicker:'大凶……',title:'……あれ？',sub:'まだ終わっていません'}
+      : {kicker:'その一瞬を、もう一度',title:'奇跡の瞬間',sub:'まもなくスローリプレイ'},
+    replay:{kicker:'奇跡の瞬間へ',title:'',sub:'0.42× SLOW REPLAY'},
+    final:kind==='reversal'
+      ? {duration:t.final,kicker:'大凶かと思ったら…',title:'大逆転大吉！',sub:'🌈 奇跡の一枚 🌈'}
+      : {duration:t.final,kicker:'大吉の、その先へ',title:'特大吉！',sub:'✨ 奇跡の一枚 ✨'}
+  };
 }
 function specialMovieMimeType(){
   if(typeof MediaRecorder==='undefined')return '';
@@ -457,6 +477,19 @@ function drawMovieText(ctx,w,h,kicker,title,sub,theme='gold',alpha=1){
   if(sub)ctx.fillText(sub,w/2,h*.56);
   ctx.restore();
 }
+function drawMovieReplayCaption(ctx,w,h,kicker,sub){
+  ctx.save();
+  const y=h*.86;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.shadowColor='rgba(0,0,0,.92)';ctx.shadowBlur=Math.round(w*.018);
+  ctx.fillStyle='rgba(255,255,255,.95)';
+  ctx.font='900 '+Math.round(w*.034)+'px system-ui, sans-serif';
+  ctx.fillText(kicker,w/2,y);
+  ctx.font='850 '+Math.round(w*.027)+'px system-ui, sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.86)';
+  ctx.fillText(sub,w/2,y+Math.round(w*.055));
+  ctx.restore();
+}
 function createMovieParticles(kind,count=90){
   return Array.from({length:count},(_,i)=>({
     x:Math.random(),y:Math.random(),size:.003+Math.random()*.009,
@@ -523,6 +556,7 @@ function drawMovieAura(ctx,w,h,kind,progress,flash=0){
 }
 function drawSpecialMovieFrame(ctx,state){
   const {kind,t,timeline,still,video,videoReady,particles,w,h}=state;
+  const spec=specialSequenceSpec(kind,{targetTime:state.targetTime});
   const slowStart=timeline.intro;
   const slowEnd=timeline.intro+timeline.slow;
   const finalStart=slowEnd;
@@ -530,49 +564,38 @@ function drawSpecialMovieFrame(ctx,state){
   if(t>=slowStart&&t<slowEnd&&video&&videoReady()&&video.readyState>=2)source=video;
 
   if(t<slowStart){
-    const p=Math.min(1,t/Math.max(.01,timeline.intro));
-    drawMovieMedia(ctx,still,w,h,1+.018*p,kind==='reversal'?.38:.16);
-    if(kind==='reversal'){
-      if(t<.78){
-        drawMovieText(ctx,w,h,'きょうの運勢','大凶','', 'plain',1);
-      }else{
-        drawMovieText(ctx,w,h,'大凶……','……あれ？','まだ終わっていません','plain',Math.min(1,(t-.78)/.24));
-      }
-    }else{
-      drawMovieAura(ctx,w,h,'miracle',.28+p*.18,0);
-      drawMovieText(ctx,w,h,'きょうの運勢','大吉','その一瞬を、もう一度','gold',1);
-      drawMovieParticles(ctx,particles.slice(0,36),w,h,t,.45,false);
-    }
+    drawMovieMedia(ctx,still,w,h,1,kind==='reversal'?.58:.30);
+    drawMovieText(
+      ctx,w,h,
+      spec.intro.kicker,
+      spec.intro.title,
+      spec.intro.sub,
+      kind==='reversal'?'plain':'gold',
+      1
+    );
     return;
   }
 
   if(t<slowEnd){
-    const p=(t-slowStart)/timeline.slow;
-    drawMovieMedia(ctx,source,w,h,1.01+p*.045,kind==='reversal'?Math.max(0,.28-p*.26):0);
-    if(kind==='reversal'){
-      const turn=Math.max(0,(p-.34)/.66);
-      const flash=Math.max(0,1-Math.abs(p-.43)/.07);
-      drawMovieAura(ctx,w,h,'reversal',turn,flash*.82);
-      drawMovieParticles(ctx,particles,w,h,t,.28+turn*.8,false);
-      drawMovieText(ctx,w,h,p<.4?'奇跡の瞬間へ':'運勢が、動く','','',turn>.2?'rainbow':'plain',.72);
-    }else{
-      drawMovieAura(ctx,w,h,'miracle',.35+p*.65,Math.max(0,1-Math.abs(p-.92)/.055)*.45);
-      drawMovieParticles(ctx,particles,w,h,t,.55+p*.45,false);
-      drawMovieText(ctx,w,h,'奇跡の瞬間へ','','','gold',.68);
-    }
+    const p=(t-slowStart)/Math.max(.01,timeline.slow);
+    drawMovieMedia(ctx,source,w,h,1+.008*p,0);
+    drawMovieReplayCaption(ctx,w,h,spec.replay.kicker,spec.replay.sub);
     return;
   }
 
   const p=Math.min(1,(t-finalStart)/timeline.final);
-  drawMovieMedia(ctx,still,w,h,1.045-p*.022,0);
+  drawMovieMedia(ctx,still,w,h,1.025-p*.015,0);
   const flash=Math.max(0,1-p/.13);
   drawMovieAura(ctx,w,h,kind,p,flash*.86);
   drawMovieParticles(ctx,particles,w,h,t,1,true);
-  if(kind==='reversal'){
-    drawMovieText(ctx,w,h,'大凶かと思ったら…','大逆転大吉！','🌈 奇跡の一枚 🌈','rainbow',Math.min(1,p*3.4));
-  }else{
-    drawMovieText(ctx,w,h,'大吉の、その先へ','特大吉！','✨ 奇跡の一枚 ✨','gold',Math.min(1,p*3.4));
-  }
+  drawMovieText(
+    ctx,w,h,
+    spec.final.kicker,
+    spec.final.title,
+    spec.final.sub,
+    kind==='reversal'?'rainbow':'gold',
+    Math.min(1,p*3.4)
+  );
 }
 async function prepareSpecialMovieVideo(replay,slowDuration){
   if(!replaySourceAvailable())return null;
@@ -589,10 +612,10 @@ async function prepareSpecialMovieVideo(replay,slowDuration){
     const duration=Number(v.duration);
     if(!Number.isFinite(duration)||duration<=0)throw new Error('invalid movie duration');
     const target=Math.max(0,Math.min(duration-.05,Number(replay.targetTime)||0));
-    const desiredLead=Math.min(target,replay.kind==='reversal'?1.55:1.35);
+    const desiredLead=Math.min(target,MIRACLE_REPLAY_LEAD_SECONDS);
     if(desiredLead<.12)throw new Error('target too close to beginning');
     const start=Math.max(0,target-desiredLead);
-    const rate=Math.max(.20,Math.min(.62,desiredLead/slowDuration));
+    const rate=MIRACLE_REPLAY_RATE;
     v.currentTime=start;
     try{await waitForVideoEvent(v,'seeked',2200);}catch(e){}
     v.playbackRate=rate;
@@ -607,7 +630,7 @@ async function renderSpecialMovie(kind,replay,onProgress){
   if(!specialMovieSupported())throw new Error('このブラウザはムービー保存に対応していません');
   if(!replay?.frameSrc)throw new Error('奇跡の写真がありません');
 
-  const timeline=specialMovieTimeline(kind);
+  const timeline=specialMovieTimeline(kind,replay);
   const still=await loadImage(replay.frameSrc);
   const portrait=still.naturalHeight>=still.naturalWidth;
   const w=portrait?720:1280;
@@ -1221,7 +1244,7 @@ function showFinalMiraclePhoto(kind,frameSrc){
       hideMiracleOverlay(false);
       dockResult();
     }
-  },8000);
+  },4200);
 }
 async function playMiracleSequence(kind,replayAgain=false){
   clearTimeout(miracleAutoCloseTimer);
@@ -1230,33 +1253,28 @@ async function playMiracleSequence(kind,replayAgain=false){
   const targetTime=currentMiracleReplay?.targetTime??Number(activeCreation?.times?.[currentIndex]);
   currentMiracleReplay={kind,frameSrc,targetTime,index:currentIndex};
   const token=++miracleSequenceToken;
+  const spec=specialSequenceSpec(kind,currentMiracleReplay);
 
   document.body.classList.add('labMiracleOpen');
   miracleStill.style.display='none';
   miracleVideo.style.display='none';
   miracleBackdropImage.src=frameSrc;
   miracleSparkles.innerHTML='';
+  miracleConfetti.innerHTML='';
 
-  if(kind==='reversal'&&!replayAgain){
-    miracleOverlay.className='show reversal-wait-mode';
-    miracleKicker.textContent='大凶……';
-    miracleTitle.textContent='……あれ？';
-    miracleSub.textContent='まだ終わっていません';
-    if(navigator.vibrate)navigator.vibrate([70,80,70]);
-    await sleep(780);
-  }else{
-    miracleOverlay.className='show miracle-intro-mode';
-    miracleKicker.textContent=replayAgain?'もう一度、その瞬間へ':'その一瞬を、もう一度';
-    miracleTitle.textContent=kind==='reversal'?'大逆転の瞬間':'奇跡の瞬間';
-    miracleSub.textContent='まもなくスローリプレイ';
-    await sleep(replayAgain?280:520);
-  }
+  miracleOverlay.className='show '+(kind==='reversal'?'reversal-wait-mode':'miracle-intro-mode');
+  miracleKicker.textContent=replayAgain?'もう一度、その瞬間へ':spec.intro.kicker;
+  miracleTitle.textContent=replayAgain?(kind==='reversal'?'大逆転の瞬間':'奇跡の瞬間'):spec.intro.title;
+  miracleSub.textContent=replayAgain?'まもなくスローリプレイ':spec.intro.sub;
+  if(kind==='reversal'&&!replayAgain&&navigator.vibrate)navigator.vibrate([70,80,70]);
+  await sleep(replayAgain?280:Math.round(spec.introDuration*1000));
   if(token!==miracleSequenceToken)return;
 
   miracleOverlay.className='show replay-mode '+(kind==='reversal'?'reversal-replay':'miracle-replay');
-  miracleKicker.textContent='奇跡の瞬間へ';
-  miracleTitle.textContent='';
-  miracleSub.textContent='0.5× SLOW REPLAY';
+  miracleKicker.textContent=spec.replay.kicker;
+  miracleTitle.textContent=spec.replay.title;
+  miracleSub.textContent=spec.replay.sub;
+  miracleReplayLabel.textContent=spec.replay.sub;
 
   await executeReplayPlan(targetTime,token,frameSrc);
   if(token!==miracleSequenceToken)return;
@@ -1889,6 +1907,40 @@ async function labDelete(id){
     tx.onerror=()=>reject(tx.error);
   });
 }
+async function downloadDailyPhoto(item){
+  if(!item?.image)return false;
+  try{
+    let blob;
+    if(typeof item.image==='string'&&item.image.startsWith('data:')){
+      const comma=item.image.indexOf(',');
+      const meta=item.image.slice(5,comma);
+      const type=(meta.split(';')[0]||'image/jpeg');
+      const raw=/;base64/i.test(meta)
+        ?atob(item.image.slice(comma+1))
+        :decodeURIComponent(item.image.slice(comma+1));
+      const bytes=new Uint8Array(raw.length);
+      for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+      blob=new Blob([bytes],{type});
+    }else{
+      blob=await (await fetch(item.image)).blob();
+    }
+    const type=blob.type||'image/jpeg';
+    const ext=type.includes('png')?'png':type.includes('webp')?'webp':'jpg';
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='baby-today-'+new Date(item.createdAt||Date.now()).toISOString().replace(/[:.]/g,'-')+'.'+ext;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1800);
+    return true;
+  }catch(err){
+    diag('daily-photo-download-error',{name:err?.name||'Error',message:String(err?.message||err)});
+    return false;
+  }
+}
 async function renderCollection(){
   const all=await labAll();
   collectionEl.innerHTML='';
@@ -1901,11 +1953,22 @@ async function renderCollection(){
     const card=document.createElement('article');
     card.className='labPhotoCard';
     const d=new Date(x.createdAt);
-    card.innerHTML='<img alt="保存した赤ちゃんの写真"><div class="labPhotoMeta"><strong></strong><span></span></div><button type="button" class="labDelete">削除</button>';
+    card.innerHTML='<img alt="保存した赤ちゃんの写真"><div class="labPhotoMeta"><strong></strong><span></span><button type="button" class="labPhotoDownload">画像をダウンロード</button></div><button type="button" class="labDelete">削除</button>';
     card.querySelector('img').src=x.image;
     const mark=x.special==='reversal'?'🌈 ':x.special==='miracle'?'✨ ':'';
     card.querySelector('strong').textContent=mark+(x.displayFortune||specialFortuneDisplay(x.special,x.fortune).fortune)+' ・ '+(x.luckyColor||'')+' ・ '+(x.luckyPoint||'');
     card.querySelector('span').textContent=d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    card.querySelector('.labPhotoDownload').addEventListener('click',async e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const btn=e.currentTarget;
+      btn.disabled=true;
+      const old=btn.textContent;
+      btn.textContent='保存中…';
+      const ok=await downloadDailyPhoto(x);
+      btn.textContent=ok?'✓ 保存しました':'保存できませんでした';
+      setTimeout(()=>{btn.textContent=old;btn.disabled=false;},1300);
+    });
     card.querySelector('.labDelete').addEventListener('click',async()=>{
       await labDelete(x.id);
       renderCollection();
