@@ -501,3 +501,12 @@ body.labGifViewerOpen{overflow:hidden}
   #labMiracleOverlay .labMiracleActions button{font-size:9.5px;padding:10px 6px}
   #labMovieStatus{bottom:max(66px,calc(env(safe-area-inset-bottom) + 60px));font-size:9px}
 }
+
+
+/* LAB 23: download saved "today's photo" */
+.labPhotoMeta .labPhotoDownload{
+  width:100%;margin-top:6px;padding:7px 8px;border-radius:10px;
+  border:1px solid #dfd2c9;background:#fffaf6;color:#624a3e;
+  font-size:9px;font-weight:900;box-shadow:none;touch-action:manipulation
+}
+.labPhotoMeta .labPhotoDownload:disabled{opacity:.62}
