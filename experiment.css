@@ -305,7 +305,7 @@ body.labMiracleOpen{overflow:hidden}
 
 
 /* LAB 6.3: replay buttons must stay above all visual FX and react immediately */
-#labReplayAgain,#labMiracleShare,#labMiracleBack,#labReplaySpecial{
+#labReplayAgain,#labMiracleBack,#labReplaySpecial{
   position:relative;
   z-index:50;
   touch-action:manipulation;
@@ -410,54 +410,9 @@ body.labGifViewerOpen{overflow:hidden}
   text-shadow:none!important;
   font-size:clamp(31px,9vw,48px)!important;line-height:1.05!important
 }
-#labMiracleShare{background:rgba(255,255,255,.22)!important}
 #labMiracleOverlay.final-photo.reversal-mode .labMiracleTitle{font-size:clamp(38px,11vw,74px)!important;line-height:1!important}
 #labMiracleOverlay.final-photo.miracle-mode .labMiracleTitle{color:#fff7bd;text-shadow:0 3px 10px #0009,0 0 28px #ffd750!important}
 @media(max-width:520px){
   #labMiracleOverlay .labMiracleActions{width:min(96vw,540px);gap:6px}
   #labMiracleOverlay .labMiracleActions button{font-size:10px;padding:10px 7px}
-}
-
-
-/* LAB 18: common save/share for every stopped photo */
-#labCommonMediaBar{
-  display:none;margin:10px 0 0;padding:9px;border-radius:16px;
-  background:#fffaf5;border:1px solid #eadfd5;
-  grid-template-columns:1fr 1fr;gap:8px;align-items:center
-}
-#labCommonMediaBar.show{display:grid}
-#labCommonMediaBar button{
-  padding:10px 12px;border-radius:999px;font-size:11px;font-weight:950;
-  box-shadow:none;touch-action:manipulation
-}
-#labCommonSave{background:#fff;color:#704d35;border:1px solid #dbc8ba}
-#labCommonShare{background:#65455c;color:#fff;border:1px solid #65455c}
-#labCommonMediaStatus{
-  grid-column:1/-1;min-height:0;text-align:center;font-size:9px;font-weight:850;color:#76665d
-}
-#labCommonMediaStatus.state-success{color:#36734b}
-#labCommonMediaStatus.state-error{color:#a34b3c}
-
-body.labSaveChoiceOpen{overflow:hidden}
-#labSaveChoice{position:fixed;inset:0;z-index:50000;display:none;align-items:flex-end;justify-content:center}
-#labSaveChoice.show{display:flex}
-.labSaveChoiceBackdrop{position:absolute;inset:0;background:rgba(15,12,14,.52);backdrop-filter:blur(5px)}
-.labSaveChoiceSheet{
-  position:relative;z-index:1;width:min(100%,520px);padding:18px 16px max(18px,env(safe-area-inset-bottom));
-  border-radius:24px 24px 0 0;background:#fffaf6;
-  box-shadow:0 -14px 44px #0004
-}
-.labSaveChoiceTitle{text-align:center;font-size:17px;font-weight:1000;color:#49372f}
-.labSaveChoiceNote{text-align:center;margin:4px 0 13px;font-size:10px;color:#8c776d}
-.labSaveChoiceSheet>button{
-  width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:2px;
-  margin-top:8px;padding:12px 14px;border-radius:15px;text-align:left;box-shadow:none
-}
-.labSaveChoiceSheet>button b{font-size:13px}
-.labSaveChoiceSheet>button span{font-size:10px;font-weight:600;opacity:.72}
-#labSavePlain{background:#fff;border:1px solid #ded3cb;color:#503d35}
-#labSaveFortune{background:linear-gradient(135deg,#fff6cd,#f7eaff);border:1px solid #e0c986;color:#62476a}
-#labSaveCancel{display:block;text-align:center!important;background:transparent;border:0;color:#806e65;font-size:11px;font-weight:850}
-@media(max-width:520px){
-  #labCommonMediaBar{margin-top:8px}
 }
