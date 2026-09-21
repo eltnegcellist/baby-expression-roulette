@@ -485,3 +485,66 @@ body.labGifViewerOpen{overflow:hidden}
   font-size:9px;font-weight:900;box-shadow:none;touch-action:manipulation
 }
 .labPhotoMeta .labPhotoDownload:disabled{opacity:.62}
+
+
+/* v26: make downloaded daily photos immediately reopenable */
+.labPhotoActions{display:grid;grid-template-columns:1fr auto;gap:5px;margin-top:6px}
+.labPhotoMeta .labPhotoActions .labPhotoDownload,
+.labPhotoMeta .labPhotoActions .labPhotoOpen{
+  width:100%;margin:0;padding:7px 8px;border-radius:10px;
+  font-size:9px;font-weight:900;box-shadow:none;touch-action:manipulation
+}
+.labPhotoMeta .labPhotoActions .labPhotoDownload{
+  border:1px solid #dfd2c9;background:#fffaf6;color:#624a3e
+}
+.labPhotoMeta .labPhotoActions .labPhotoOpen{
+  border:1px solid #75536b;background:#75536b;color:#fff;min-width:50px
+}
+body.labPhotoViewerOpen{overflow:hidden}
+#labPhotoViewer{
+  position:fixed;inset:0;z-index:45000;display:none;
+  align-items:center;justify-content:center;
+  padding:max(18px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom));
+  background:rgba(8,7,10,.95);backdrop-filter:blur(12px)
+}
+#labPhotoViewer.show{display:flex}
+#labPhotoViewerClose{
+  position:absolute;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));
+  width:44px;height:44px;border-radius:999px;border:1px solid #ffffff66;
+  background:rgba(0,0,0,.55);color:#fff;font-size:28px;line-height:1;z-index:3
+}
+.labPhotoViewerInner{
+  width:min(96vw,700px);max-height:94dvh;
+  display:flex;flex-direction:column;align-items:center;gap:10px
+}
+.labPhotoViewerTitle{color:#fff;font-size:17px;font-weight:950}
+#labPhotoViewerImage{
+  display:block;max-width:100%;max-height:78dvh;object-fit:contain;
+  border-radius:16px;background:#000;box-shadow:0 12px 38px #0008
+}
+.labPhotoViewerNote{color:#ffffffbb;font-size:10px;text-align:center}
+#labPhotoViewerDone{
+  padding:10px 18px;border-radius:999px;border:1px solid #ffffff70;
+  background:rgba(255,255,255,.12);color:#fff;font-weight:900;font-size:12px
+}
+#labDownloadNotice{
+  position:fixed;z-index:44000;left:50%;
+  bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));
+  transform:translate(-50%,24px);opacity:0;pointer-events:none;
+  width:min(92vw,460px);display:grid;grid-template-columns:1fr auto auto;
+  align-items:center;gap:7px;padding:9px 10px 9px 14px;border-radius:16px;
+  background:rgba(42,34,39,.95);color:#fff;
+  box-shadow:0 10px 28px #0005;backdrop-filter:blur(10px);
+  transition:opacity .18s ease,transform .22s ease
+}
+#labDownloadNotice.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#labDownloadNotice span{font-size:11px;font-weight:900}
+#labDownloadNotice button{box-shadow:none;touch-action:manipulation}
+#labDownloadNoticeOpen{
+  padding:7px 12px;border-radius:999px;background:#fff;color:#5a3d50;
+  border:0;font-size:10px;font-weight:950
+}
+#labDownloadNoticeClose{
+  width:30px;height:30px;border-radius:999px;background:transparent;color:#fff;
+  border:1px solid #ffffff40;font-size:18px;line-height:1
+}
