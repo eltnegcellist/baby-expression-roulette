@@ -45,7 +45,7 @@
   .labLuckyRow{font-size:9px}.labLuckyRow b{font-size:10px}
 }
 
-
+/* LAB 4: move the result panel below the photo after the initial reveal */
 #labResultDock{display:none;margin-top:10px}
 #labResultDock.show{display:block}
 #labResultDock #resultCard.labDocked{
@@ -72,7 +72,7 @@
 #labResultDock #labFortuneExtra{margin-top:8px;padding-top:8px}
 @keyframes labDockIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 
-
+/* LAB 4: unmistakable full-screen miracle / reversal sequence */
 #labMiracleOverlay{
   position:fixed;inset:0;z-index:30000;display:none;pointer-events:none;
   align-items:center;justify-content:center;overflow:hidden;text-align:center
@@ -137,7 +137,7 @@
 }
 
 
-
+/* LAB 5: scrolling on the photo is scrolling, not a roulette tap */
 #stage{touch-action:pan-y}
 
 /* History entries are interactive result snapshots */
@@ -154,7 +154,7 @@
 }
 
 
-
+/* LAB 6: tease the hidden miracle */
 .labMiracleHint{
   margin-top:8px;padding:9px 11px;border-radius:13px;
   background:linear-gradient(135deg,#fff9d8,#fff0f6);
@@ -162,7 +162,7 @@
   font-size:11px;font-weight:850;line-height:1.45
 }
 
-
+/* LAB 6: cinematic miracle replay */
 #labMiracleOverlay{
   pointer-events:auto!important;
   background:#08070a!important;
@@ -271,7 +271,7 @@
 }
 
 
-
+/* LAB 6.1: lock background while miracle replay is open */
 body.labMiracleOpen{overflow:hidden}
 #labReplaySpecial{
   display:none;margin:9px auto 0;padding:8px 12px;border-radius:999px;
@@ -281,7 +281,7 @@ body.labMiracleOpen{overflow:hidden}
 }
 
 
-
+/* LAB 6.2: final miracle photo must never fade into an invisible tap-blocking layer */
 #labMiracleOverlay{user-select:none;-webkit-user-select:none}
 #labMiracleOverlay:not(.show){pointer-events:none!important}
 #labMiracleOverlay.final-photo{
@@ -300,7 +300,7 @@ body.labMiracleOpen{overflow:hidden}
 }
 
 
-
+/* LAB 6.3: replay buttons must stay above all visual FX and react immediately */
 #labReplayAgain,#labMiracleBack,#labReplaySpecial{
   position:relative;
   z-index:50;
@@ -316,7 +316,7 @@ body.labMiracleOpen{overflow:hidden}
 }
 
 
-
+/* LAB 6.4: in-app GIF viewer (browser-independent) */
 body.labGifViewerOpen{overflow:hidden}
 #labGifViewer{
   position:fixed;inset:0;z-index:40000;display:none;
@@ -349,3 +349,139 @@ body.labGifViewerOpen{overflow:hidden}
 }
 
 
+
+
+/* LAB 16: premium miracle fortune UX */
+#labSpecialEmblem{display:none;margin:0 auto 8px;width:max-content;max-width:100%;padding:5px 10px;border-radius:999px;font-size:9px;font-weight:1000;letter-spacing:.12em}
+#resultCard.labSpecialMiracle,
+#labResultDock #resultCard.labDocked.labSpecialMiracle{
+  border:1px solid #f1cd58!important;
+  background:
+    radial-gradient(circle at 50% -20%,#fffbe7 0,#fff4b8 34%,transparent 63%),
+    linear-gradient(145deg,#fffdf5,#fff1b7 52%,#ffd978)!important;
+  box-shadow:0 10px 30px #a76b162e,0 0 0 2px #fff6c7 inset,0 0 30px #ffd85b45!important
+}
+#resultCard.labSpecialMiracle #labSpecialEmblem{background:#8a5b00;color:#fff8cf;box-shadow:0 3px 12px #8a5b0033}
+#resultCard.labSpecialMiracle #resultHead{color:#8c6410!important;font-weight:950!important;letter-spacing:.08em}
+#resultCard.labSpecialMiracle #resultText{
+  color:#9a5b00!important;
+  text-shadow:0 1px 0 #fff8c8,0 3px 12px #ffcf4a77!important;
+  font-size:clamp(38px,11vw,58px)!important
+}
+#resultCard.labSpecialReversal,
+#labResultDock #resultCard.labDocked.labSpecialReversal{
+  border:1px solid #c5a7eb!important;
+  background:
+    radial-gradient(circle at 8% 10%,#ffd8f0aa 0,transparent 34%),
+    radial-gradient(circle at 92% 14%,#b8f2ffaa 0,transparent 36%),
+    linear-gradient(145deg,#fffafd,#eef1ff 48%,#fff3bd)!important;
+  box-shadow:0 10px 30px #70499524,0 0 0 2px #ffffffcc inset,0 0 34px #c17cff36!important
+}
+#resultCard.labSpecialReversal #labSpecialEmblem{background:linear-gradient(110deg,#8654aa,#497bc2,#be7379);color:#fff;box-shadow:0 3px 13px #70499544}
+#resultCard.labSpecialReversal #resultHead{color:#745486!important;font-weight:950!important;letter-spacing:.04em}
+#resultCard.labSpecialReversal #resultText{
+  background:linear-gradient(100deg,#8b49a7,#447ec4,#bf6a83,#a47917);
+  -webkit-background-clip:text;background-clip:text;color:transparent!important;
+  text-shadow:none!important;
+  font-size:clamp(31px,9vw,48px)!important;line-height:1.05!important
+}
+#labMiracleOverlay.final-photo.reversal-mode .labMiracleTitle{font-size:clamp(38px,11vw,74px)!important;line-height:1!important}
+#labMiracleOverlay.final-photo.miracle-mode .labMiracleTitle{color:#fff7bd;text-shadow:0 3px 10px #0009,0 0 28px #ffd750!important}
+@media(max-width:520px){
+  #labMiracleOverlay .labMiracleActions{width:min(96vw,540px);gap:6px}
+  #labMiracleOverlay .labMiracleActions button{font-size:10px;padding:10px 7px}
+}
+
+
+/* LAB 22: richer rare-result FX + WebM movie export */
+#labMiracleOverlay .labMiracleBurst{
+  position:absolute;inset:-30%;z-index:2;pointer-events:none;opacity:0;
+  transform:scale(.5) rotate(0deg)
+}
+#labMiracleOverlay.final-photo .labMiracleBurst{
+  opacity:.82;
+  background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.42) 0 2deg,transparent 2deg 9deg);
+  animation:labRareBurst 4.2s cubic-bezier(.12,.8,.2,1) both
+}
+#labMiracleOverlay.final-photo.reversal-mode .labMiracleBurst{
+  background:repeating-conic-gradient(from 0deg,
+    rgba(255,120,220,.52) 0 2deg,transparent 2deg 6deg,
+    rgba(110,220,255,.48) 6deg 8deg,transparent 8deg 12deg,
+    rgba(255,238,115,.45) 12deg 14deg,transparent 14deg 18deg)
+}
+@keyframes labRareBurst{
+  0%{opacity:0;transform:scale(.35) rotate(-10deg)}
+  14%{opacity:1;transform:scale(.78) rotate(2deg)}
+  100%{opacity:.18;transform:scale(1.35) rotate(28deg)}
+}
+#labMiracleOverlay.final-photo::after{
+  content:"";position:absolute;inset:0;z-index:12;pointer-events:none;
+  background:#fff;opacity:0;animation:labRareFlash .72s ease-out both
+}
+@keyframes labRareFlash{0%{opacity:.92}16%{opacity:.2}100%{opacity:0}}
+.labMiracleSparkles span.gold{color:#ffe470}
+.labMiracleSparkles span.rainbow:nth-child(5n+1){color:#ff94d9}
+.labMiracleSparkles span.rainbow:nth-child(5n+2){color:#86dcff}
+.labMiracleSparkles span.rainbow:nth-child(5n+3){color:#fff18a}
+.labMiracleSparkles span.rainbow:nth-child(5n+4){color:#a2ffc0}
+.labMiracleSparkles span.rainbow:nth-child(5n){color:#d5a4ff}
+#labMiracleOverlay .labMiracleConfetti{
+  position:absolute;inset:0;z-index:7;pointer-events:none;overflow:hidden
+}
+#labMiracleOverlay .labMiracleConfetti i{
+  position:absolute;left:var(--x);top:-8vh;width:7px;height:18px;border-radius:2px;
+  background:hsl(var(--h),92%,64%);opacity:0;
+  transform:rotate(var(--rot));
+}
+#labMiracleOverlay.final-photo .labMiracleConfetti i{
+  animation:labConfettiFall var(--dur) var(--d) cubic-bezier(.15,.55,.38,.98) both
+}
+@keyframes labConfettiFall{
+  0%{opacity:0;transform:translate3d(0,-8vh,0) rotate(0deg)}
+  10%{opacity:1}
+  100%{opacity:.72;transform:translate3d(28px,112vh,0) rotate(var(--rot))}
+}
+#labSaveSpecialMovieResult{
+  display:none;margin:8px auto 0;padding:9px 13px;border-radius:999px;
+  background:linear-gradient(135deg,#2d2037,#76528e);color:#fff;
+  border:1px solid #9579a6;font-size:11px;font-weight:950;box-shadow:0 5px 16px #55336624
+}
+#labMovieResultStatus{
+  margin-top:5px;text-align:center;font-size:9px;font-weight:850;color:#76665d;min-height:0
+}
+#labMovieStatus{
+  display:none;position:absolute;z-index:16;left:50%;
+  bottom:max(70px,calc(env(safe-area-inset-bottom) + 64px));
+  transform:translateX(-50%);width:min(88vw,460px);
+  padding:7px 10px;border-radius:999px;background:rgba(8,7,10,.68);
+  border:1px solid #ffffff45;color:#fff;font-size:10px;font-weight:850;
+  backdrop-filter:blur(8px);pointer-events:none
+}
+#labMiracleOverlay.final-photo #labMovieStatus:not(:empty){display:block}
+#labMovieStatus.state-success,#labMovieResultStatus.state-success{color:#d7ffd8}
+#labMovieStatus.state-error{color:#ffd3cb}
+#labMovieResultStatus.state-success{color:#36734b}
+#labMovieResultStatus.state-error{color:#a34b3c}
+#labSaveSpecialMovie{
+  background:linear-gradient(135deg,rgba(76,48,91,.88),rgba(145,95,174,.76))!important;
+  border-color:#d9b8e9!important
+}
+#labSaveSpecialMovie:disabled,#labSaveSpecialMovieResult:disabled{opacity:.58}
+#labReplayAgain,#labSaveSpecialMovie,#labMiracleBack,#labReplaySpecial,#labSaveSpecialMovieResult{
+  position:relative;z-index:50;touch-action:manipulation;pointer-events:auto!important;
+  -webkit-tap-highlight-color:transparent
+}
+@media(max-width:520px){
+  #labMiracleOverlay .labMiracleActions{width:min(98vw,560px);gap:5px}
+  #labMiracleOverlay .labMiracleActions button{font-size:9.5px;padding:10px 6px}
+  #labMovieStatus{bottom:max(66px,calc(env(safe-area-inset-bottom) + 60px));font-size:9px}
+}
+
+
+/* LAB 23: download saved "today's photo" */
+.labPhotoMeta .labPhotoDownload{
+  width:100%;margin-top:6px;padding:7px 8px;border-radius:10px;
+  border:1px solid #dfd2c9;background:#fffaf6;color:#624a3e;
+  font-size:9px;font-weight:900;box-shadow:none;touch-action:manipulation
+}
+.labPhotoMeta .labPhotoDownload:disabled{opacity:.62}
