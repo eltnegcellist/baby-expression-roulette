@@ -47,6 +47,64 @@ function closeGifViewer(){
 gifViewerClose.addEventListener('click',closeGifViewer);
 gifViewerDone.addEventListener('click',closeGifViewer);
 
+
+const photoViewer=document.createElement('div');
+photoViewer.id='labPhotoViewer';
+photoViewer.innerHTML=
+  '<button id="labPhotoViewerClose" type="button" aria-label="画像を閉じる">×</button>'+
+  '<div class="labPhotoViewerInner">'+
+    '<div class="labPhotoViewerTitle">今日の一枚</div>'+
+    '<img id="labPhotoViewerImage" alt="保存した今日の一枚">'+
+    '<div class="labPhotoViewerNote">端末に保存した画像と同じ写真です</div>'+
+    '<button id="labPhotoViewerDone" type="button">閉じる</button>'+
+  '</div>';
+document.body.appendChild(photoViewer);
+const photoViewerImage=photoViewer.querySelector('#labPhotoViewerImage');
+const photoViewerClose=photoViewer.querySelector('#labPhotoViewerClose');
+const photoViewerDone=photoViewer.querySelector('#labPhotoViewerDone');
+
+const downloadNotice=document.createElement('div');
+downloadNotice.id='labDownloadNotice';
+downloadNotice.innerHTML=
+  '<span>✓ 画像を保存しました</span>'+
+  '<button id="labDownloadNoticeOpen" type="button">開く</button>'+
+  '<button id="labDownloadNoticeClose" type="button" aria-label="閉じる">×</button>';
+document.body.appendChild(downloadNotice);
+const downloadNoticeOpen=downloadNotice.querySelector('#labDownloadNoticeOpen');
+const downloadNoticeClose=downloadNotice.querySelector('#labDownloadNoticeClose');
+let lastDownloadedPhoto=null;
+let downloadNoticeTimer=null;
+
+function openDailyPhoto(item){
+  if(!item?.image)return;
+  photoViewerImage.src=item.image;
+  photoViewer.classList.add('show');
+  document.body.classList.add('labPhotoViewerOpen');
+}
+function closeDailyPhoto(){
+  photoViewer.classList.remove('show');
+  photoViewerImage.removeAttribute('src');
+  document.body.classList.remove('labPhotoViewerOpen');
+}
+function hideDownloadNotice(){
+  clearTimeout(downloadNoticeTimer);
+  downloadNoticeTimer=null;
+  downloadNotice.classList.remove('show');
+}
+function showDownloadNotice(item){
+  lastDownloadedPhoto=item;
+  downloadNotice.classList.add('show');
+  clearTimeout(downloadNoticeTimer);
+  downloadNoticeTimer=setTimeout(hideDownloadNotice,15000);
+}
+photoViewerClose.addEventListener('click',closeDailyPhoto);
+photoViewerDone.addEventListener('click',closeDailyPhoto);
+downloadNoticeOpen.addEventListener('click',()=>{
+  if(lastDownloadedPhoto)openDailyPhoto(lastDownloadedPhoto);
+  hideDownloadNotice();
+});
+downloadNoticeClose.addEventListener('click',hideDownloadNotice);
+
 const MIRACLE_DAIKICHI_RATE=.35;
 const MIRACLE_DAIKYO_RATE=.40;
 const MIRACLE_REPLAY_LEAD_SECONDS=3.0;
@@ -1879,7 +1937,7 @@ async function renderCollection(){
     const card=document.createElement('article');
     card.className='labPhotoCard';
     const d=new Date(x.createdAt);
-    card.innerHTML='<img alt="保存した赤ちゃんの写真"><div class="labPhotoMeta"><strong></strong><span></span><button type="button" class="labPhotoDownload">画像をダウンロード</button></div><button type="button" class="labDelete">削除</button>';
+    card.innerHTML='<img alt="保存した赤ちゃんの写真"><div class="labPhotoMeta"><strong></strong><span></span><div class="labPhotoActions"><button type="button" class="labPhotoDownload">画像をダウンロード</button><button type="button" class="labPhotoOpen">開く</button></div></div><button type="button" class="labDelete">削除</button>';
     card.querySelector('img').src=x.image;
     const mark=x.special==='reversal'?'🌈 ':x.special==='miracle'?'✨ ':'';
     card.querySelector('strong').textContent=mark+(x.displayFortune||specialFortuneDisplay(x.special,x.fortune).fortune)+' ・ '+(x.luckyColor||'')+' ・ '+(x.luckyPoint||'');
@@ -1893,7 +1951,13 @@ async function renderCollection(){
       btn.textContent='保存中…';
       const ok=await downloadDailyPhoto(x);
       btn.textContent=ok?'✓ 保存しました':'保存できませんでした';
+      if(ok)showDownloadNotice(x);
       setTimeout(()=>{btn.textContent=old;btn.disabled=false;},1300);
+    });
+    card.querySelector('.labPhotoOpen').addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      openDailyPhoto(x);
     });
     card.querySelector('.labDelete').addEventListener('click',async()=>{
       await labDelete(x.id);
